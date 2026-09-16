@@ -22,9 +22,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Hàm tạo Âm thanh MP3 trực tiếp từ Google TTS (100% hoạt động mượt mà)
-@st.cache_data(show_spinner=False)
-def get_audio_html(text):
+# Hàm tạo Âm thanh MP3 chuẩn (tạo unique key để buộc trình duyệt phát âm thanh mỗi lần bấm)
+def get_audio_html(text, autoplay=True):
     if not text:
         return ""
     try:
@@ -34,10 +33,12 @@ def get_audio_html(text):
         fp.seek(0)
         audio_bytes = fp.read()
         b64_audio = base64.b64encode(audio_bytes).decode('utf-8')
+        autoplay_attr = "autoplay" if autoplay else ""
+        random_id = random.randint(10000, 99999)
         audio_html = f'''
             <div style="text-align: center; margin: 10px 0;">
-                <audio controls autoplay style="height: 40px; width: 280px;">
-                    <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
+                <audio controls {autoplay_attr} id="aud_{random_id}" style="height: 40px; width: 280px;">
+                    <source src="data:audio/mp3;base64,{b64_audio}?v={random_id}" type="audio/mp3">
                     Trình duyệt của bạn không hỗ trợ phát âm thanh.
                 </audio>
             </div>
@@ -97,6 +98,9 @@ VOCAB_DATA = [
     {"char": "国", "pinyin": "guó", "meaning": "nước, quốc gia", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "人", "pinyin": "rén", "meaning": "người", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "中国", "pinyin": "Zhōngguó", "meaning": "Trung Quốc", "lesson": LESSON_NAMES["Q1_2"]},
+    {"char": "南非", "pinyin": "Nánfēi", "meaning": "Nam Phi", "lesson": LESSON_NAMES["Q1_2"]},
+    {"char": "英国", "pinyin": "Yīngguó", "meaning": "nước Anh", "lesson": LESSON_NAMES["Q1_2"]},
+    {"char": "美国", "pinyin": "Měiguó", "meaning": "nước Mỹ", "lesson": LESSON_NAMES["Q1_2"]},
 
     # --- QUYỂN 1: BÀI 3 ---
     {"char": "请问", "pinyin": "qǐngwèn", "meaning": "xin hỏi", "lesson": LESSON_NAMES["Q1_3"]},
@@ -106,6 +110,8 @@ VOCAB_DATA = [
     {"char": "名片", "pinyin": "míngpiàn", "meaning": "danh thiếp", "lesson": LESSON_NAMES["Q1_3"]},
     {"char": "很高兴", "pinyin": "gāoxìng", "meaning": "vui mừng", "lesson": LESSON_NAMES["Q1_3"]},
     {"char": "认识", "pinyin": "rènshi", "meaning": "quen biết", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "不", "pinyin": "bù", "meaning": "không", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "贵", "pinyin": "guì", "meaning": "quý", "lesson": LESSON_NAMES["Q1_3"]},
 
     # --- QUYỂN 1: BÀI 4 ---
     {"char": "小姐", "pinyin": "xiǎojiě", "meaning": "cô, tiểu thư", "lesson": LESSON_NAMES["Q1_4"]},
@@ -121,6 +127,11 @@ VOCAB_DATA = [
     {"char": "多少", "pinyin": "duōshao", "meaning": "bao nhiêu", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "钱", "pinyin": "qián", "meaning": "tiền", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "块", "pinyin": "kuài", "meaning": "đồng (tiền)", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "坐", "pinyin": "zuò", "meaning": "ngồi, đi (xe)", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "出租车", "pinyin": "chūzūchē", "meaning": "xe taxi", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "公共汽车", "pinyin": "gōnggòng qìchē", "meaning": "xe buýt", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "打车", "pinyin": "dǎ chē", "meaning": "bắt xe", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "地铁", "pinyin": "dìtiě", "meaning": "tàu điện ngầm", "lesson": LESSON_NAMES["Q1_4"]},
 
     # --- QUYỂN 1: BÀI 5 ---
     {"char": "要", "pinyin": "yào", "meaning": "muốn, cần", "lesson": LESSON_NAMES["Q1_5"]},
@@ -195,6 +206,8 @@ if "vocab_deck" not in st.session_state:
     st.session_state.vocab_deck = []
 if "last_selected_lessons" not in st.session_state:
     st.session_state.last_selected_lessons = []
+if "last_clicked_word" not in st.session_state:
+    st.session_state.last_clicked_word = ""
 
 filtered_vocab = [item for item in VOCAB_DATA if item["lesson"] in selected_lessons]
 filtered_sentences = [item for item in SENTENCE_DATA if item["lesson"] in selected_lessons]
@@ -202,6 +215,7 @@ filtered_sentences = [item for item in SENTENCE_DATA if item["lesson"] in select
 def new_question():
     st.session_state.selected_sentence_words = []
     st.session_state.answered = False
+    st.session_state.last_clicked_word = ""
     st.session_state.q_id += 1
     
     if not filtered_vocab:
@@ -313,7 +327,6 @@ else:
         st.markdown(f"<p style='text-align: center; font-size: 18px; color: #888;'>📚 Bài học: <b>{q['target']['lesson']}</b></p>", unsafe_allow_html=True)
         st.markdown(f"<h1 style='text-align: center; font-size: 110px; color: #1E88E5;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
         
-        # Thanh phát âm chuẩn MP3 từ Google
         st.markdown(get_audio_html(q['target']['char']), unsafe_allow_html=True)
         
         user_choice = st.radio("Chọn Pinyin:", q["options"], key=current_radio_key, on_change=handle_answer, index=None, label_visibility="collapsed")
@@ -344,7 +357,6 @@ else:
         st.markdown(f"<h1 style='text-align: center; font-size: 100px; color: #2E7D32;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
         st.markdown(f"<p style='text-align: center; font-size: 24px; color: gray;'>Pinyin: <b>{q['target']['pinyin']}</b></p>", unsafe_allow_html=True)
 
-        # Thanh phát âm chuẩn MP3 từ Google
         st.markdown(get_audio_html(q['target']['char']), unsafe_allow_html=True)
 
         user_choice = st.radio("Chọn Nghĩa:", q["options"], key=current_radio_key, on_change=handle_answer, index=None, label_visibility="collapsed")
@@ -364,19 +376,22 @@ else:
         current_sentence = " ".join(st.session_state.selected_sentence_words)
         st.markdown(f"### Câu bạn chọn: **{current_sentence}**")
         
-        if current_sentence:
-            st.markdown(get_audio_html("".join(st.session_state.selected_sentence_words)), unsafe_allow_html=True)
+        # Phát âm từ mới bấm chọn
+        if st.session_state.last_clicked_word:
+            st.markdown(get_audio_html(st.session_state.last_clicked_word), unsafe_allow_html=True)
 
         cols = st.columns(len(q["shuffled_words"]))
         for idx, w in enumerate(q["shuffled_words"]):
             if cols[idx].button(w, key=f"btn_{st.session_state.q_id}_{idx}"):
                 st.session_state.selected_sentence_words.append(w)
+                st.session_state.last_clicked_word = w
                 st.rerun()
 
         c1, c2 = st.columns([1, 1])
         with c1:
             if st.button("🔄 Xóa chọn lại"):
                 st.session_state.selected_sentence_words = []
+                st.session_state.last_clicked_word = ""
                 st.rerun()
         with c2:
             if st.button("✔️ Nộp bài ghép câu"):
@@ -385,6 +400,8 @@ else:
                     user_sentence = " ".join(st.session_state.selected_sentence_words)
                     is_correct = (user_sentence == q["correct_sent"])
                     record_answer(is_correct)
+                    # Sau khi nộp bài sẽ phát âm nguyên câu vừa ghép
+                    st.session_state.last_clicked_word = "".join(st.session_state.selected_sentence_words)
                     st.rerun()
 
         if st.session_state.answered:
