@@ -19,16 +19,16 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Hàm phát âm chuẩn bằng Web Speech API
+# Hàm phát âm tiếng Trung tức thì can thiệp trực tiếp vào Cửa sổ chính trình duyệt
 def speak_chinese_js(text):
     if text:
         js_code = f"""
         <script>
+            window.parent.speechSynthesis.cancel();
             var msg = new SpeechSynthesisUtterance('{text}');
             msg.lang = 'zh-CN';
             msg.rate = 0.85;
-            window.speechSynthesis.cancel();
-            window.speechSynthesis.speak(msg);
+            window.parent.speechSynthesis.speak(msg);
         </script>
         """
         components.html(js_code, height=0, width=0)
@@ -135,7 +135,7 @@ SENTENCE_DATA = [
     {"words": ["我", "参观", "了", "上海", "博物馆"], "pinyin_words": ["Wǒ", "cānguān", "le", "Shànghǎi", "bówùguǎn"], "lesson": LESSON_NAMES["Q2_6"]},
     {"words": ["我们", "是", "骑", "自行车", "去", "的"], "pinyin_words": ["Wǒmen", "shì", "qí", "zìxíngchē", "qù", "de"], "lesson": LESSON_NAMES["Q2_7"]},
     {"words": ["除了", "英语", "以外", "我", "还", "会", "说", "汉语"], "pinyin_words": ["Chúle", "Yīngyǔ", "yǐwài", "wǒ", "hái", "huì", "shuō", "Hànyǔ"], "lesson": LESSON_NAMES["Q2_8"]},
-    {"words": ["如果", "权", "感兴趣", "的", "话", "可以", "去", "动物园"], "pinyin_words": ["Rúguǒ", "nǐ", "gǎn xìngqù", "de", "huà", "kěyǐ", "qù", "dòngwùyuán"], "lesson": LESSON_NAMES["Q2_9"]},
+    {"words": ["如果", "你", "感兴趣", "的", "话", "可以", "去", "动物园"], "pinyin_words": ["Rúguǒ", "nǐ", "gǎn xìngqù", "de", "huà", "kěyǐ", "qù", "dòngwùyuán"], "lesson": LESSON_NAMES["Q2_9"]},
     {"words": ["今天", "真", "是", "给", "您", "添", "麻烦", "了"], "pinyin_words": ["Jīntiān", "zhēn", "shì", "gěi", "nín", "tiān", "máfan", "le"], "lesson": LESSON_NAMES["Q2_10"]}
 ]
 
@@ -174,10 +174,8 @@ if "speak_word" not in st.session_state:
     st.session_state.speak_word = ""
 if "local_history" not in st.session_state:
     st.session_state.local_history = []
-
-# BỘ BÀI TỪ VỰNG CHƯA HỌC (Đồng bộ triệt để tránh lặp)
-if "remaining_vocab_pool" not in st.session_state:
-    st.session_state.remaining_vocab_pool = []
+if "remaining_vocab" not in st.session_state:
+    st.session_state.remaining_vocab = []
 
 filtered_vocab = [item for item in VOCAB_DATA if item["lesson"] in selected_lessons]
 filtered_sentences = [item for item in SENTENCE_DATA if item["lesson"] in selected_lessons]
@@ -203,13 +201,12 @@ def new_question():
         current_mode = "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa"
 
     if current_mode in ["Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa"]:
-        # Kiểm tra nếu bộ bài chưa được tạo hoặc đã dùng hết -> Tạo mới và trộn bộ bài
-        if not st.session_state.remaining_vocab_pool:
-            st.session_state.remaining_vocab_pool = list(filtered_vocab)
-            random.shuffle(st.session_state.remaining_vocab_pool)
+        # TỰ ĐỘNG KHỞI TẠO BỘ BÀI TỪ VỰNG NẾU RỖNG HOẶC HẾT LƯỢT
+        if not st.session_state.remaining_vocab:
+            st.session_state.remaining_vocab = list(filtered_vocab)
+            random.shuffle(st.session_state.remaining_vocab)
             
-        # Rút 1 từ ra khỏi bộ bài (Đảm bảo không lặp lại cho đến khi hết bài)
-        target = st.session_state.remaining_vocab_pool.pop()
+        target = st.session_state.remaining_vocab.pop(0)
         
         if current_mode == "Dạng 1: Chữ Hán ➡️ 4 Pinyin":
             key = "pinyin"
@@ -251,9 +248,8 @@ if start_button:
     st.session_state.quiz_started = True
     st.session_state.score = 0
     st.session_state.total = 0
-    # Reset bộ bài từ vựng mới khi người dùng bấm bắt đầu
-    st.session_state.remaining_vocab_pool = list(filtered_vocab)
-    random.shuffle(st.session_state.remaining_vocab_pool)
+    st.session_state.remaining_vocab = list(filtered_vocab)
+    random.shuffle(st.session_state.remaining_vocab)
     new_question()
     st.rerun()
 
@@ -269,7 +265,7 @@ def send_to_google_sheet(is_correct):
     
     payload = {"name": name, "mode": mode_clean, "is_correct": 1 if is_correct else 0}
     try:
-        requests.post(GOOGLE_SHEET_URL, json=payload, timeout=2)
+        requests.post(GOOGLE_SHEET_URL, json=payload, timeout=1.5)
     except Exception:
         pass
 
@@ -397,7 +393,7 @@ with st.sidebar.expander("📊 Tỷ số", expanded=False):
     sheet_loaded = False
     
     try:
-        res = requests.get(GOOGLE_SHEET_URL, timeout=1.5)
+        res = requests.get(GOOGLE_SHEET_URL, timeout=1.2)
         sheet_data = res.json()
         if len(sheet_data) > 1:
             df = pd.DataFrame(sheet_data[1:], columns=sheet_data[0])
