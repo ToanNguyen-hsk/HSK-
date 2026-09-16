@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import streamlit as st
 import random
 import pandas as pd
@@ -7,7 +8,6 @@ import streamlit.components.v1 as components
 # 1. Cấu hình trang web
 st.set_page_config(page_title="App Ôn Tập Từ Vựng HSK - MSUTONG 1 & 2", layout="centered")
 
-# 🔗 ĐÃ THAY LINK GOOGLE APPS SCRIPT MỚI CỦA BẠN
 GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxcnKRCCcd-iIkzspRGjS4jnwdCU3A25FwAVCBWlmJHMKT2le5kYd22O3i-V-fv3c0V/exec"
 
 st.markdown("""
@@ -20,21 +20,28 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Hàm phát âm tiếng Trung bằng Web Speech API
+# Hàm phát âm tối ưu hóa chống treo/chặn âm thanh từ trình duyệt
 def speak_chinese_js(text):
     if text:
-        clean_text = text.replace("'", "\\'").replace("\n", " ")
+        clean_text = text.replace("'", "\\'").replace('"', '\\"').replace("\n", " ")
         js_code = f"""
         <script>
-            if ('speechSynthesis' in window.parent) {{
-                window.parent.speechSynthesis.cancel();
-                setTimeout(function() {{
-                    var msg = new SpeechSynthesisUtterance('{clean_text}');
-                    msg.lang = 'zh-CN';
-                    msg.rate = 0.85;
-                    window.parent.speechSynthesis.speak(msg);
-                }}, 50);
-            }}
+            (function() {{
+                try {{
+                    var synth = window.parent.speechSynthesis || window.speechSynthesis;
+                    if (synth) {{
+                        synth.cancel(); // Xóa sạch lệnh cũ
+                        setTimeout(function() {{
+                            var msg = new SpeechSynthesisUtterance("{clean_text}");
+                            msg.lang = "zh-CN";
+                            msg.rate = 0.85;
+                            synth.speak(msg);
+                        }}, 100);
+                    }}
+                }} catch (e) {{
+                    console.log(e);
+                }}
+            }})();
         </script>
         """
         components.html(js_code, height=0, width=0)
@@ -66,7 +73,7 @@ LESSON_NAMES = {
     "Q2_10": "Quyển 2 - Bài 10: 给您添麻烦了! (Gěi nín tiān máfan le!)"
 }
 
-# BẢNG TỪ VỰNG TỔNG HỢP TOÀN BỘ TỪ CHÍNH & TỪ BỔ SUNG
+# Kho từ vựng chuẩn Unicode không xén bớt
 VOCAB_DATA = [
     # --- QUYỂN 1: BÀI 1 ---
     {"char": "你好", "pinyin": "nǐ hǎo", "meaning": "xin chào", "lesson": LESSON_NAMES["Q1_1"]},
@@ -84,15 +91,17 @@ VOCAB_DATA = [
     {"char": "什么", "pinyin": "shénme", "meaning": "gì, cái gì", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "名字", "pinyin": "míngzi", "meaning": "tên", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "我", "pinyin": "wǒ", "meaning": "tôi", "lesson": LESSON_NAMES["Q1_2"]},
-    {"char": "呢", "pinyin": "ne", "meaning": "trợ từ ngữ khí (còn...thì sao)", "lesson": LESSON_NAMES["Q1_2"]},
+    {"char": "呢", "pinyin": "ne", "meaning": "trợ từ ngữ khí", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "是", "pinyin": "shì", "meaning": "là", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "哪", "pinyin": "nǎ", "meaning": "nào", "lesson": LESSON_NAMES["Q1_2"]},
-    {"char": "国", "pinyin": "guó", "meaning": "quốc gia, nước", "lesson": LESSON_NAMES["Q1_2"]},
+    {"char": "国", "pinyin": "guó", "meaning": "nước, quốc gia", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "人", "pinyin": "rén", "meaning": "người", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "中国", "pinyin": "Zhōngguó", "meaning": "Trung Quốc", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "南非", "pinyin": "Nánfēi", "meaning": "Nam Phi", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "英国", "pinyin": "Yīngguó", "meaning": "nước Anh", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "美国", "pinyin": "Měiguó", "meaning": "nước Mỹ", "lesson": LESSON_NAMES["Q1_2"]},
+    {"char": "卡玛拉", "pinyin": "Kǎmǎlā", "meaning": "Kamala", "lesson": LESSON_NAMES["Q1_2"]},
+    {"char": "高小明", "pinyin": "Gāo Xiǎomíng", "meaning": "Cao Tiểu Minh", "lesson": LESSON_NAMES["Q1_2"]},
 
     # --- QUYỂN 1: BÀI 3 ---
     {"char": "请问", "pinyin": "qǐngwèn", "meaning": "xin hỏi", "lesson": LESSON_NAMES["Q1_3"]},
@@ -101,7 +110,11 @@ VOCAB_DATA = [
     {"char": "这", "pinyin": "zhè", "meaning": "đây, này", "lesson": LESSON_NAMES["Q1_3"]},
     {"char": "名片", "pinyin": "míngpiàn", "meaning": "danh thiếp", "lesson": LESSON_NAMES["Q1_3"]},
     {"char": "很高兴", "pinyin": "gāoxìng", "meaning": "vui mừng, phấn khởi", "lesson": LESSON_NAMES["Q1_3"]},
-    {"char": "认识", "pinyin": "rènshi", "meaning": "quen biết, quen", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "认识", "pinyin": "rènshi", "meaning": "quen biết", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "不", "pinyin": "bù", "meaning": "không", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "贵", "pinyin": "guì", "meaning": "quý", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "也", "pinyin": "yě", "meaning": "cũng", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "吗", "pinyin": "ma", "meaning": "trợ từ nghi vấn", "lesson": LESSON_NAMES["Q1_3"]},
 
     # --- QUYỂN 1: BÀI 4 ---
     {"char": "小姐", "pinyin": "xiǎojiě", "meaning": "cô, tiểu thư", "lesson": LESSON_NAMES["Q1_4"]},
@@ -111,28 +124,92 @@ VOCAB_DATA = [
     {"char": "人民", "pinyin": "rénmín", "meaning": "nhân dân", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "广场", "pinyin": "guǎngchǎng", "meaning": "quảng trường", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "知道", "pinyin": "zhīdào", "meaning": "biết", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "了", "pinyin": "le", "meaning": "rồi", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "远", "pinyin": "yuǎn", "meaning": "xa", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "近", "pinyin": "jìn", "meaning": "gần", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "到", "pinyin": "dào", "meaning": "đến, tới", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "多少", "pinyin": "duōshao", "meaning": "bao nhiêu", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "钱", "pinyin": "qián", "meaning": "tiền", "lesson": LESSON_NAMES["Q1_4"]},
-    {"char": "块", "pinyin": "kuài", "meaning": "đồng (lượng từ tiền)", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "块", "pinyin": "kuài", "meaning": "đồng (tiền)", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "客气", "pinyin": "kèqi", "meaning": "khách sáo", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "再", "pinyin": "zài", "meaning": "lại", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "坐", "pinyin": "zuò", "meaning": "ngồi, đi (xe)", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "出租车", "pinyin": "chūzūchē", "meaning": "xe taxi", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "公共汽车", "pinyin": "gōnggòng qìchē", "meaning": "xe buýt", "lesson": LESSON_NAMES["Q1_4"]},
-    {"char": "打车", "pinyin": "dǎ chē", "meaning": "gọi xe, bắt xe", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "打车", "pinyin": "dǎ chē", "meaning": "bắt xe", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "地铁", "pinyin": "dìtiě", "meaning": "tàu điện ngầm", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "银行", "pinyin": "yínháng", "meaning": "ngân hàng", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "公安局", "pinyin": "gōng'ān jú", "meaning": "sở công an", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "饭店", "pinyin": "fàndiàn", "meaning": "nhà hàng", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "邮局", "pinyin": "yóujú", "meaning": "bưu điện", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "宾馆", "pinyin": "bīnguǎn", "meaning": "khách sạn", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "洗手间", "pinyin": "xǐshǒujiān", "meaning": "nhà vệ sinh", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "飞机场", "pinyin": "fēijīchǎng", "meaning": "sân bay", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "火车站", "pinyin": "huǒchēzhàn", "meaning": "ga tàu hỏa", "lesson": LESSON_NAMES["Q1_4"]},
 
-    # --- QUYỂN 1: BÀI 5 -> 10 ---
+    # --- QUYỂN 1: BÀI 5 (ĐẦY ĐỦ CÁC TỪ) ---
     {"char": "要", "pinyin": "yào", "meaning": "muốn, cần", "lesson": LESSON_NAMES["Q1_5"]},
     {"char": "吃", "pinyin": "chī", "meaning": "ăn", "lesson": LESSON_NAMES["Q1_5"]},
-    {"char": "工作", "pinyin": "gōngzuò", "meaning": "làm việc", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "一点儿", "pinyin": "yìdiǎnr", "meaning": "một chút", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "个", "pinyin": "gè", "meaning": "cái, chiếc", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "牛肉", "pinyin": "niúròu", "meaning": "thịt bò", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "青菜", "pinyin": "qīngcài", "meaning": "rau xanh", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "还", "pinyin": "hái", "meaning": "còn", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "两", "pinyin": "liǎng", "meaning": "hai (số lượng)", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "碗", "pinyin": "wǎn", "meaning": "bát, chén", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "米饭", "pinyin": "mǐfàn", "meaning": "cơm", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "快", "pinyin": "kuài", "meaning": "nhanh", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "饿", "pinyin": "è", "meaning": "đói", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "喝", "pinyin": "hē", "meaning": "uống", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "杯", "pinyin": "bēi", "meaning": "cốc, ly", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "奶茶", "pinyin": "nǎichá", "meaning": "trà sữa", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "大", "pinyin": "dà", "meaning": "to, lớn", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "还是", "pinyin": "háishi", "meaning": "hay là", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "小", "pinyin": "xiǎo", "meaning": "nhỏ, bé", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "咖啡", "pinyin": "kāfēi", "meaning": "cà phê", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "一共", "pinyin": "yígòng", "meaning": "tổng cộng", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "包子", "pinyin": "bāozi", "meaning": "bánh bao", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "饺子", "pinyin": "jiǎozi", "meaning": "sủi cáo", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "面条", "pinyin": "miàntiáo", "meaning": "mì sợi", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "水", "pinyin": "shuǐ", "meaning": "nước", "lesson": LESSON_NAMES["Q1_5"]},
+
+    # --- QUYỂN 1: BÀI 6 ---
+    {"char": "在", "pinyin": "zài", "meaning": "ở, tại", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "工作", "pinyin": "gōngzuò", "meaning": "công việc, làm việc", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "苹果", "pinyin": "píngguǒ", "meaning": "quả táo / Apple", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "公司", "pinyin": "gōngsī", "meaning": "công ty", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "留学生", "pinyin": "liúxuéshēng", "meaning": "lưu học sinh", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "学生", "pinyin": "xuéshēng", "meaning": "học sinh", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "这儿", "pinyin": "zhèr", "meaning": "ở đây", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "学习", "pinyin": "xuéxí", "meaning": "học tập", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "汉语", "pinyin": "Hànyǔ", "meaning": "tiếng Hán", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "对", "pinyin": "duì", "meaning": "đúng", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "男朋友", "pinyin": "nánpéngyou", "meaning": "bạn trai", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "做", "pinyin": "zuò", "meaning": "làm", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "大学", "pinyin": "dàxué", "meaning": "đại học", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "教", "pinyin": "jiāo", "meaning": "dạy", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "英语", "pinyin": "Yīngyǔ", "meaning": "tiếng Anh", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "女朋友", "pinyin": "nǚpéngyou", "meaning": "bạn gái", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "医院", "pinyin": "yīyuàn", "meaning": "bệnh viện", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "医生", "pinyin": "yīshēng", "meaning": "bác sĩ", "lesson": LESSON_NAMES["Q1_6"]},
+    {"char": "经理", "pinyin": "jīnglǐ", "meaning": "giám đốc", "lesson": LESSON_NAMES["Q1_6"]},
+
+    # --- QUYỂN 1: BÀI 7 -> 10 ---
     {"char": "附近", "pinyin": "fùjìn", "meaning": "gần đây", "lesson": LESSON_NAMES["Q1_7"]},
     {"char": "生日", "pinyin": "shēngrì", "meaning": "sinh nhật", "lesson": LESSON_NAMES["Q1_8"]},
     {"char": "喜欢", "pinyin": "xǐhuan", "meaning": "thích", "lesson": LESSON_NAMES["Q1_9"]},
-    {"char": "爸爸", "pinyin": "bàba", "meaning": "bố", "lesson": LESSON_NAMES["Q1_10"]}
+    {"char": "爸爸", "pinyin": "bàba", "meaning": "bố", "lesson": LESSON_NAMES["Q1_10"]},
+    {"char": "妈妈", "pinyin": "māma", "meaning": "mẹ", "lesson": LESSON_NAMES["Q1_10"]},
+    {"char": "哥哥", "pinyin": "gēge", "meaning": "anh trai", "lesson": LESSON_NAMES["Q1_10"]},
+    {"char": "妹妹", "pinyin": "mèimei", "meaning": "em gái", "lesson": LESSON_NAMES["Q1_10"]},
+
+    # --- QUYỂN 2 ---
+    {"char": "正在", "pinyin": "zhèngzài", "meaning": "đang", "lesson": LESSON_NAMES["Q2_1"]},
+    {"char": "听", "pinyin": "tīng", "meaning": "nghe", "lesson": LESSON_NAMES["Q2_1"]},
+    {"char": "起床", "pinyin": "qǐchuáng", "meaning": "thức dậy", "lesson": LESSON_NAMES["Q2_2"]},
+    {"char": "可以", "pinyin": "kěyǐ", "meaning": "có thể", "lesson": LESSON_NAMES["Q2_3"]},
+    {"char": "衣服", "pinyin": "yīfu", "meaning": "quần áo", "lesson": LESSON_NAMES["Q2_4"]},
+    {"char": "空儿", "pinyin": "kòngr", "meaning": "thời gian rảnh", "lesson": LESSON_NAMES["Q2_5"]}
 ]
 
 SENTENCE_DATA = [
@@ -155,7 +232,7 @@ user_name = st.sidebar.text_input("Họ và tên (không bắt buộc):", placeh
 
 st.sidebar.title("⚙️ Tùy Chỉnh Bài Học")
 all_lessons_options = list(LESSON_NAMES.values())
-selected_lessons = st.sidebar.multiselect("Lựa chọn bài kiểm tra:", options=all_lessons_options, default=[LESSON_NAMES["Q1_4"]])
+selected_lessons = st.sidebar.multiselect("Lựa chọn bài kiểm tra:", options=all_lessons_options, default=[LESSON_NAMES["Q1_5"]])
 
 st.sidebar.title("🎯 Dạng Bài Tập")
 quiz_mode = st.sidebar.radio(
@@ -211,6 +288,7 @@ def new_question():
         current_mode = "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa"
 
     if current_mode in ["Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa"]:
+        # Khởi tạo bộ bài nếu người dùng vừa chọn lại danh sách bài học hoặc bộ bài bị rút hết
         if st.session_state.last_selected_lessons != selected_lessons or not st.session_state.vocab_deck:
             st.session_state.vocab_deck = list(filtered_vocab)
             random.shuffle(st.session_state.vocab_deck)
@@ -290,7 +368,7 @@ def handle_answer():
 # --- GIAO DIỆN CHÍNH ---
 st.title("🎓 App Kiểm Tra Từ Vựng & Ngữ Pháp MSUTONG")
 
-# Kích hoạt âm thanh
+# Kích hoạt phát âm
 if st.session_state.speak_word:
     speak_chinese_js(st.session_state.speak_word)
 
