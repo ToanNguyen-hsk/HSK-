@@ -3,7 +3,9 @@ import streamlit as st
 import random
 import pandas as pd
 import requests
-import streamlit.components.v1 as components
+import base64
+from io import BytesIO
+from gtts import gTTS
 
 # 1. Cấu hình trang web
 st.set_page_config(page_title="App Ôn Tập Từ Vựng HSK - MSUTONG 1 & 2", layout="centered")
@@ -17,49 +19,32 @@ st.markdown("""
         font-weight: 500 !important;
         line-height: 1.6 !important;
     }
-    .audio-btn {
-        background-color: #4CAF50;
-        color: white;
-        padding: 8px 16px;
-        font-size: 18px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-top: 10px;
-        margin-bottom: 10px;
-    }
-    .audio-btn:hover {
-        background-color: #45a049;
-    }
     </style>
 """, unsafe_allow_html=True)
 
-# Hàm tạo nút Bấm Phát Âm bằng HTML/JS Native (Vượt qua rào cản chặn Autoplay)
-def render_audio_button(text, label="🔊 Bấm để nghe phát âm"):
-    if text:
-        clean_text = text.replace("'", "\\'").replace('"', '\\"').replace("\n", " ")
-        html_code = f"""
-        <div style="text-align: center;">
-            <button class="audio-btn" onclick="playSpeech('{clean_text}')">{label}</button>
-        </div>
-        <script>
-            function playSpeech(text) {{
-                try {{
-                    var synth = window.parent.speechSynthesis || window.speechSynthesis;
-                    if (synth) {{
-                        synth.cancel();
-                        var msg = new SpeechSynthesisUtterance(text);
-                        msg.lang = 'zh-CN';
-                        msg.rate = 0.85;
-                        synth.speak(msg);
-                    }}
-                }} catch(e) {{
-                    console.log(e);
-                }}
-            }}
-        </script>
-        """
-        components.html(html_code, height=60)
+# Hàm tạo Âm thanh MP3 trực tiếp từ Google TTS (100% hoạt động mượt mà)
+@st.cache_data(show_spinner=False)
+def get_audio_html(text):
+    if not text:
+        return ""
+    try:
+        tts = gTTS(text=text, lang='zh-CN', slow=False)
+        fp = BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        audio_bytes = fp.read()
+        b64_audio = base64.b64encode(audio_bytes).decode('utf-8')
+        audio_html = f'''
+            <div style="text-align: center; margin: 10px 0;">
+                <audio controls autoplay style="height: 40px; width: 280px;">
+                    <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
+                    Trình duyệt của bạn không hỗ trợ phát âm thanh.
+                </audio>
+            </div>
+        '''
+        return audio_html
+    except Exception as e:
+        return ""
 
 # Danh mục Tên bài học chuẩn MSUTONG
 LESSON_NAMES = {
@@ -88,7 +73,7 @@ LESSON_NAMES = {
     "Q2_10": "Quyển 2 - Bài 10: 给您添麻烦了! (Gěi nín tiān máfan le!)"
 }
 
-# Kho từ vựng chuẩn Unicode không xén bớt
+# Kho từ vựng chuẩn Unicode
 VOCAB_DATA = [
     # --- QUYỂN 1: BÀI 1 ---
     {"char": "你好", "pinyin": "nǐ hǎo", "meaning": "xin chào", "lesson": LESSON_NAMES["Q1_1"]},
@@ -112,9 +97,6 @@ VOCAB_DATA = [
     {"char": "国", "pinyin": "guó", "meaning": "nước, quốc gia", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "人", "pinyin": "rén", "meaning": "người", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "中国", "pinyin": "Zhōngguó", "meaning": "Trung Quốc", "lesson": LESSON_NAMES["Q1_2"]},
-    {"char": "南非", "pinyin": "Nánfēi", "meaning": "Nam Phi", "lesson": LESSON_NAMES["Q1_2"]},
-    {"char": "英国", "pinyin": "Yīngguó", "meaning": "nước Anh", "lesson": LESSON_NAMES["Q1_2"]},
-    {"char": "美国", "pinyin": "Měiguó", "meaning": "nước Mỹ", "lesson": LESSON_NAMES["Q1_2"]},
 
     # --- QUYỂN 1: BÀI 3 ---
     {"char": "请问", "pinyin": "qǐngwèn", "meaning": "xin hỏi", "lesson": LESSON_NAMES["Q1_3"]},
@@ -122,10 +104,8 @@ VOCAB_DATA = [
     {"char": "姓", "pinyin": "xìng", "meaning": "họ", "lesson": LESSON_NAMES["Q1_3"]},
     {"char": "这", "pinyin": "zhè", "meaning": "đây, này", "lesson": LESSON_NAMES["Q1_3"]},
     {"char": "名片", "pinyin": "míngpiàn", "meaning": "danh thiếp", "lesson": LESSON_NAMES["Q1_3"]},
-    {"char": "很高兴", "pinyin": "gāoxìng", "meaning": "vui mừng, phấn khởi", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "很高兴", "pinyin": "gāoxìng", "meaning": "vui mừng", "lesson": LESSON_NAMES["Q1_3"]},
     {"char": "认识", "pinyin": "rènshi", "meaning": "quen biết", "lesson": LESSON_NAMES["Q1_3"]},
-    {"char": "不", "pinyin": "bù", "meaning": "không", "lesson": LESSON_NAMES["Q1_3"]},
-    {"char": "贵", "pinyin": "guì", "meaning": "quý", "lesson": LESSON_NAMES["Q1_3"]},
 
     # --- QUYỂN 1: BÀI 4 ---
     {"char": "小姐", "pinyin": "xiǎojiě", "meaning": "cô, tiểu thư", "lesson": LESSON_NAMES["Q1_4"]},
@@ -141,11 +121,6 @@ VOCAB_DATA = [
     {"char": "多少", "pinyin": "duōshao", "meaning": "bao nhiêu", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "钱", "pinyin": "qián", "meaning": "tiền", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "块", "pinyin": "kuài", "meaning": "đồng (tiền)", "lesson": LESSON_NAMES["Q1_4"]},
-    {"char": "坐", "pinyin": "zuò", "meaning": "ngồi, đi (xe)", "lesson": LESSON_NAMES["Q1_4"]},
-    {"char": "出租车", "pinyin": "chūzūchē", "meaning": "xe taxi", "lesson": LESSON_NAMES["Q1_4"]},
-    {"char": "公共汽车", "pinyin": "gōnggòng qìchē", "meaning": "xe buýt", "lesson": LESSON_NAMES["Q1_4"]},
-    {"char": "打车", "pinyin": "dǎ chē", "meaning": "bắt xe", "lesson": LESSON_NAMES["Q1_4"]},
-    {"char": "地铁", "pinyin": "dìtiě", "meaning": "tàu điện ngầm", "lesson": LESSON_NAMES["Q1_4"]},
 
     # --- QUYỂN 1: BÀI 5 ---
     {"char": "要", "pinyin": "yào", "meaning": "muốn, cần", "lesson": LESSON_NAMES["Q1_5"]},
@@ -338,8 +313,8 @@ else:
         st.markdown(f"<p style='text-align: center; font-size: 18px; color: #888;'>📚 Bài học: <b>{q['target']['lesson']}</b></p>", unsafe_allow_html=True)
         st.markdown(f"<h1 style='text-align: center; font-size: 110px; color: #1E88E5;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
         
-        # Hiển thị nút loa phát âm trực tiếp
-        render_audio_button(q['target']['char'])
+        # Thanh phát âm chuẩn MP3 từ Google
+        st.markdown(get_audio_html(q['target']['char']), unsafe_allow_html=True)
         
         user_choice = st.radio("Chọn Pinyin:", q["options"], key=current_radio_key, on_change=handle_answer, index=None, label_visibility="collapsed")
         
@@ -357,8 +332,7 @@ else:
         user_choice = st.radio("Chọn Chữ Hán:", q["options"], key=current_radio_key, on_change=handle_answer, index=None, label_visibility="collapsed")
         
         if st.session_state.answered:
-            # Phát âm từ khi đã chọn đáp án
-            render_audio_button(q['target']['char'], label=f"🔊 Nghe đọc: {q['target']['char']}")
+            st.markdown(get_audio_html(q['target']['char']), unsafe_allow_html=True)
             if user_choice == q["correct_ans"]:
                 st.success("🎉 Chính xác!")
             else:
@@ -370,8 +344,8 @@ else:
         st.markdown(f"<h1 style='text-align: center; font-size: 100px; color: #2E7D32;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
         st.markdown(f"<p style='text-align: center; font-size: 24px; color: gray;'>Pinyin: <b>{q['target']['pinyin']}</b></p>", unsafe_allow_html=True)
 
-        # Hiển thị nút loa phát âm trực tiếp
-        render_audio_button(q['target']['char'])
+        # Thanh phát âm chuẩn MP3 từ Google
+        st.markdown(get_audio_html(q['target']['char']), unsafe_allow_html=True)
 
         user_choice = st.radio("Chọn Nghĩa:", q["options"], key=current_radio_key, on_change=handle_answer, index=None, label_visibility="collapsed")
         
@@ -391,7 +365,7 @@ else:
         st.markdown(f"### Câu bạn chọn: **{current_sentence}**")
         
         if current_sentence:
-            render_audio_button("".join(st.session_state.selected_sentence_words), label="🔊 Nghe câu bạn vừa ghép")
+            st.markdown(get_audio_html("".join(st.session_state.selected_sentence_words)), unsafe_allow_html=True)
 
         cols = st.columns(len(q["shuffled_words"]))
         for idx, w in enumerate(q["shuffled_words"]):
@@ -415,7 +389,7 @@ else:
 
         if st.session_state.answered:
             user_sentence = " ".join(st.session_state.selected_sentence_words)
-            render_audio_button("".join(q["target_sent"]["words"]), label="🔊 Nghe câu đáp án chuẩn")
+            st.markdown(get_audio_html("".join(q["target_sent"]["words"])), unsafe_allow_html=True)
             if user_sentence == q["correct_sent"]:
                 st.success("🎉 Chính xác!")
             else:
