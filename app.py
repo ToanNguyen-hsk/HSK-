@@ -19,7 +19,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Hàm phát âm tiếng Trung tức thì bằng Web Speech API
+# Hàm phát âm chuẩn bằng Web Speech API
 def speak_chinese_js(text):
     if text:
         js_code = f"""
@@ -107,7 +107,6 @@ VOCAB_DATA = [
     {"char": "麻烦", "pinyin": "máfan", "meaning": "Làm phiền", "lesson": LESSON_NAMES["Q2_10"]}
 ]
 
-# KHO MẪU CÂU (ĐÃ BỔ SUNG ĐẦY ĐỦ CÂU CHO BÀI 10 QUYỂN 1)
 SENTENCE_DATA = [
     # QUYỂN 1 - BÀI 1 -> 9
     {"words": ["王", "老师", "您", "好"], "pinyin_words": ["Wáng", "lǎoshī", "nín", "hǎo"], "lesson": LESSON_NAMES["Q1_1"]},
@@ -120,12 +119,11 @@ SENTENCE_DATA = [
     {"words": ["今天", "晚上", "我", "想", "请", "你", "看", "电影"], "pinyin_words": ["Jīntiān", "wǎnshang", "wǒ", "xiǎng", "qǐng", "nǐ", "kàn", "diànyǐng"], "lesson": LESSON_NAMES["Q1_8"]},
     {"words": ["你", "喜欢", "中国", "菜", "还是", "韩国", "菜"], "pinyin_words": ["Nǐ", "xǐhuan", "Zhōngguó", "cài", "háishi", "Hánguó", "cài"], "lesson": LESSON_NAMES["Q1_9"]},
 
-    # 🔥 QUYỂN 1 - BÀI 10 (ĐÃ CẬP NHẬT THÊM NỔI BẬT PHONG PHÚ)
+    # QUYỂN 1 - BÀI 10
     {"words": ["你", "家", "有", "几", "口", "人"], "pinyin_words": ["Nǐ", "jiā", "yǒu", "jǐ", "kǒu", "rén"], "lesson": LESSON_NAMES["Q1_10"]},
     {"words": ["我", "家", "有", "四", "口", "人"], "pinyin_words": ["Wǒ", "jiā", "yǒu", "sì", "kǒu", "rén"], "lesson": LESSON_NAMES["Q1_10"]},
     {"words": ["我", "妹妹", "今年", "十", "岁", "很", "可爱"], "pinyin_words": ["Wǒ", "mèimei", "jīnnián", "shí", "suì", "hěn", "kě'ài"], "lesson": LESSON_NAMES["Q1_10"]},
     {"words": ["我", "爸爸", "是", "律师", "妈妈", "是", "医生"], "pinyin_words": ["Wǒ", "bàba", "shì", "lǜshī", "māma", "shì", "yīshēng"], "lesson": LESSON_NAMES["Q1_10"]},
-    {"words": ["我", "姐姐", "的", "爱好", "是", "看", "电影"], "pinyin_words": ["Wǒ", "jiějie", "de", "àihào", "shì", "kàn", "diànyǐng"], "lesson": LESSON_NAMES["Q1_10"]},
     {"words": ["上海", "和", "北京", "都", "是", "大城市"], "pinyin_words": ["Shànghǎi", "hé", "Běijīng", "dōu", "shì", "dà chéngshì"], "lesson": LESSON_NAMES["Q1_10"]},
 
     # QUYỂN 2 - BÀI 1 -> 10
@@ -174,6 +172,12 @@ if "q_id" not in st.session_state:
     st.session_state.q_id = 0
 if "speak_word" not in st.session_state:
     st.session_state.speak_word = ""
+if "local_history" not in st.session_state:
+    st.session_state.local_history = []
+
+# Bổ sung theo dõi từ đã xuất hiện để đi hết lượt mới lặp lại
+if "used_vocab_indices" not in st.session_state:
+    st.session_state.used_vocab_indices = set()
 
 filtered_vocab = [item for item in VOCAB_DATA if item["lesson"] in selected_lessons]
 filtered_sentences = [item for item in SENTENCE_DATA if item["lesson"] in selected_lessons]
@@ -199,7 +203,16 @@ def new_question():
         current_mode = "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa"
 
     if current_mode in ["Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa"]:
-        target = random.choice(filtered_vocab)
+        # Thuật toán đi hết 1 lượt từ mới rồi mới lặp lại
+        unused_vocab = [v for v in filtered_vocab if v["char"] not in st.session_state.used_vocab_indices]
+        
+        # Nếu đã kiểm tra hết tất cả từ trong các bài được chọn -> Reset lại để chọn vòng mới
+        if not unused_vocab:
+            st.session_state.used_vocab_indices.clear()
+            unused_vocab = list(filtered_vocab)
+            
+        target = random.choice(unused_vocab)
+        st.session_state.used_vocab_indices.add(target["char"])
         
         if current_mode == "Dạng 1: Chữ Hán ➡️ 4 Pinyin":
             key = "pinyin"
@@ -241,15 +254,23 @@ if start_button:
     st.session_state.quiz_started = True
     st.session_state.score = 0
     st.session_state.total = 0
+    st.session_state.used_vocab_indices.clear() # Reset lại danh sách từ đã dùng khi bấm bắt đầu mới
     new_question()
     st.rerun()
 
 def send_to_google_sheet(is_correct):
     name = user_name.strip() if user_name.strip() else "Ẩn danh"
     mode_clean = st.session_state.question["mode"].replace(":", " -")
+    
+    st.session_state.local_history.append({
+        "Tên": name,
+        "Dạng bài": mode_clean,
+        "is_correct": 1 if is_correct else 0
+    })
+    
     payload = {"name": name, "mode": mode_clean, "is_correct": 1 if is_correct else 0}
     try:
-        requests.post(GOOGLE_SHEET_URL, json=payload, timeout=3)
+        requests.post(GOOGLE_SHEET_URL, json=payload, timeout=2)
     except Exception:
         pass
 
@@ -273,7 +294,6 @@ st.title("🎓 App Kiểm Tra Từ Vựng & Ngữ Pháp MSUTONG")
 # Kích hoạt âm thanh phát ra khi có từ/câu cần phát âm
 if st.session_state.speak_word:
     speak_chinese_js(st.session_state.speak_word)
-    st.session_state.speak_word = ""
 
 if not st.session_state.quiz_started:
     st.info("👈 Hãy tích chọn các Bài ở danh mục bên trái, sau đó nhấn nút **🚀 Bắt đầu kiểm tra** để làm bài!")
@@ -339,6 +359,7 @@ else:
         for idx, w in enumerate(q["shuffled_words"]):
             if cols[idx].button(w, key=f"btn_{st.session_state.q_id}_{idx}"):
                 st.session_state.selected_sentence_words.append(w)
+                # Đặt lệnh phát âm ngay từ vừa được chọn
                 st.session_state.speak_word = w
                 st.rerun()
 
@@ -346,6 +367,7 @@ else:
         with c1:
             if st.button("🔄 Xóa chọn lại"):
                 st.session_state.selected_sentence_words = []
+                st.session_state.speak_word = ""
                 st.rerun()
         with c2:
             if st.button("✔️ Nộp bài ghép câu"):
@@ -354,6 +376,7 @@ else:
                     user_sentence = " ".join(st.session_state.selected_sentence_words)
                     is_correct = (user_sentence == q["correct_sent"])
                     record_answer(is_correct)
+                    # Phát âm nguyên câu hoàn chỉnh khi bấm nộp bài
                     st.session_state.speak_word = "".join(st.session_state.selected_sentence_words)
                     st.rerun()
 
@@ -374,40 +397,49 @@ else:
 
 # 6. MỤC MỞ RỘNG "TỶ SỐ"
 with st.sidebar.expander("📊 Tỷ số", expanded=False):
+    sheet_loaded = False
+    
     try:
-        res = requests.get(GOOGLE_SHEET_URL, timeout=3)
+        res = requests.get(GOOGLE_SHEET_URL, timeout=1.5)
         sheet_data = res.json()
-        
-        if len(sheet_data) <= 1:
-            st.write("Chưa có dữ liệu làm bài nào.")
-        else:
+        if len(sheet_data) > 1:
             df = pd.DataFrame(sheet_data[1:], columns=sheet_data[0])
-            df["Kết quả (1=Đúng, 0=Sai)"] = pd.to_numeric(df["Kết quả (1=Đúng, 0=Sai)"])
-            
-            summary_df = df.groupby(["Tên", "Dạng bài"]).agg(
-                Tong_Cau=("Kết quả (1=Đúng, 0=Sai)", "count"),
-                Cau_Dung=("Kết quả (1=Đúng, 0=Sai)", "sum")
-            ).reset_index()
-            
-            summary_df["Ty_Le_Dung_%"] = (summary_df["Cau_Dung"] / summary_df["Tong_Cau"] * 100).round(1)
-            
-            st.write("**Bảng xếp hạng toàn bộ người làm (%)**")
-            st.dataframe(
-                summary_df[["Tên", "Dạng bài", "Ty_Le_Dung_%", "Cau_Dung", "Tong_Cau"]],
-                column_config={
-                    "Tên": "Tên",
-                    "Dạng bài": "Dạng bài",
-                    "Ty_Le_Dung_%": "Tỷ lệ đúng (%)",
-                    "Cau_Dung": "Đúng",
-                    "Tong_Cau": "Tổng câu"
-                },
-                hide_index=True,
-                use_container_width=True
-            )
-            
-            st.write("**Biểu đồ so sánh Tỷ lệ đúng (%)**")
-            chart_data = summary_df.pivot(index="Tên", columns="Dạng bài", values="Ty_Le_Dung_%").fillna(0)
-            chart_data.columns = [str(col).replace("➡️", "->") for col in chart_data.columns]
-            st.bar_chart(chart_data)
+            df["is_correct"] = pd.to_numeric(df["Kết quả (1=Đúng, 0=Sai)"])
+            sheet_loaded = True
     except Exception:
-        st.write("Đang kết nối tới máy chủ...")
+        sheet_loaded = False
+
+    if not sheet_loaded:
+        if st.session_state.local_history:
+            df = pd.DataFrame(st.session_state.local_history)
+        else:
+            df = pd.DataFrame()
+
+    if df.empty:
+        st.write("Chưa có dữ liệu làm bài nào.")
+    else:
+        summary_df = df.groupby(["Tên", "Dạng bài"]).agg(
+            Tong_Cau=("is_correct", "count"),
+            Cau_Dung=("is_correct", "sum")
+        ).reset_index()
+        
+        summary_df["Ty_Le_Dung_%"] = (summary_df["Cau_Dung"] / summary_df["Tong_Cau"] * 100).round(1)
+        
+        st.write("**Bảng xếp hạng người làm (%)**")
+        st.dataframe(
+            summary_df[["Tên", "Dạng bài", "Ty_Le_Dung_%", "Cau_Dung", "Tong_Cau"]],
+            column_config={
+                "Tên": "Tên",
+                "Dạng bài": "Dạng bài",
+                "Ty_Le_Dung_%": "Tỷ lệ đúng (%)",
+                "Cau_Dung": "Đúng",
+                "Tong_Cau": "Tổng câu"
+            },
+            hide_index=True,
+            use_container_width=True
+        )
+        
+        st.write("**Biểu đồ so sánh Tỷ lệ đúng (%)**")
+        chart_data = summary_df.pivot(index="Tên", columns="Dạng bài", values="Ty_Le_Dung_%").fillna(0)
+        chart_data.columns = [str(col).replace("➡️", "->") for col in chart_data.columns]
+        st.bar_chart(chart_data)
