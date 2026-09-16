@@ -135,7 +135,7 @@ SENTENCE_DATA = [
     {"words": ["我", "参观", "了", "上海", "博物馆"], "pinyin_words": ["Wǒ", "cānguān", "le", "Shànghǎi", "bówùguǎn"], "lesson": LESSON_NAMES["Q2_6"]},
     {"words": ["我们", "是", "骑", "自行车", "去", "的"], "pinyin_words": ["Wǒmen", "shì", "qí", "zìxíngchē", "qù", "de"], "lesson": LESSON_NAMES["Q2_7"]},
     {"words": ["除了", "英语", "以外", "我", "还", "会", "说", "汉语"], "pinyin_words": ["Chúle", "Yīngyǔ", "yǐwài", "wǒ", "hái", "huì", "shuō", "Hànyǔ"], "lesson": LESSON_NAMES["Q2_8"]},
-    {"words": ["如果", "你", "感兴趣", "的", "话", "可以", "去", "动物园"], "pinyin_words": ["Rúguǒ", "nǐ", "gǎn xìngqù", "de", "huà", "kěyǐ", "qù", "dòngwùyuán"], "lesson": LESSON_NAMES["Q2_9"]},
+    {"words": ["如果", "权", "感兴趣", "的", "话", "可以", "去", "动物园"], "pinyin_words": ["Rúguǒ", "nǐ", "gǎn xìngqù", "de", "huà", "kěyǐ", "qù", "dòngwùyuán"], "lesson": LESSON_NAMES["Q2_9"]},
     {"words": ["今天", "真", "是", "给", "您", "添", "麻烦", "了"], "pinyin_words": ["Jīntiān", "zhēn", "shì", "gěi", "nín", "tiān", "máfan", "le"], "lesson": LESSON_NAMES["Q2_10"]}
 ]
 
@@ -175,9 +175,9 @@ if "speak_word" not in st.session_state:
 if "local_history" not in st.session_state:
     st.session_state.local_history = []
 
-# Bổ sung theo dõi từ đã xuất hiện để đi hết lượt mới lặp lại
-if "used_vocab_indices" not in st.session_state:
-    st.session_state.used_vocab_indices = set()
+# BỘ BÀI TỪ VỰNG CHƯA HỌC (Đồng bộ triệt để tránh lặp)
+if "remaining_vocab_pool" not in st.session_state:
+    st.session_state.remaining_vocab_pool = []
 
 filtered_vocab = [item for item in VOCAB_DATA if item["lesson"] in selected_lessons]
 filtered_sentences = [item for item in SENTENCE_DATA if item["lesson"] in selected_lessons]
@@ -203,16 +203,13 @@ def new_question():
         current_mode = "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa"
 
     if current_mode in ["Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa"]:
-        # Thuật toán đi hết 1 lượt từ mới rồi mới lặp lại
-        unused_vocab = [v for v in filtered_vocab if v["char"] not in st.session_state.used_vocab_indices]
-        
-        # Nếu đã kiểm tra hết tất cả từ trong các bài được chọn -> Reset lại để chọn vòng mới
-        if not unused_vocab:
-            st.session_state.used_vocab_indices.clear()
-            unused_vocab = list(filtered_vocab)
+        # Kiểm tra nếu bộ bài chưa được tạo hoặc đã dùng hết -> Tạo mới và trộn bộ bài
+        if not st.session_state.remaining_vocab_pool:
+            st.session_state.remaining_vocab_pool = list(filtered_vocab)
+            random.shuffle(st.session_state.remaining_vocab_pool)
             
-        target = random.choice(unused_vocab)
-        st.session_state.used_vocab_indices.add(target["char"])
+        # Rút 1 từ ra khỏi bộ bài (Đảm bảo không lặp lại cho đến khi hết bài)
+        target = st.session_state.remaining_vocab_pool.pop()
         
         if current_mode == "Dạng 1: Chữ Hán ➡️ 4 Pinyin":
             key = "pinyin"
@@ -254,7 +251,9 @@ if start_button:
     st.session_state.quiz_started = True
     st.session_state.score = 0
     st.session_state.total = 0
-    st.session_state.used_vocab_indices.clear() # Reset lại danh sách từ đã dùng khi bấm bắt đầu mới
+    # Reset bộ bài từ vựng mới khi người dùng bấm bắt đầu
+    st.session_state.remaining_vocab_pool = list(filtered_vocab)
+    random.shuffle(st.session_state.remaining_vocab_pool)
     new_question()
     st.rerun()
 
@@ -359,7 +358,6 @@ else:
         for idx, w in enumerate(q["shuffled_words"]):
             if cols[idx].button(w, key=f"btn_{st.session_state.q_id}_{idx}"):
                 st.session_state.selected_sentence_words.append(w)
-                # Đặt lệnh phát âm ngay từ vừa được chọn
                 st.session_state.speak_word = w
                 st.rerun()
 
@@ -376,7 +374,6 @@ else:
                     user_sentence = " ".join(st.session_state.selected_sentence_words)
                     is_correct = (user_sentence == q["correct_sent"])
                     record_answer(is_correct)
-                    # Phát âm nguyên câu hoàn chỉnh khi bấm nộp bài
                     st.session_state.speak_word = "".join(st.session_state.selected_sentence_words)
                     st.rerun()
 
