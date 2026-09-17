@@ -242,13 +242,25 @@ quiz_mode = st.sidebar.radio(
 start_button = st.sidebar.button("🚀 Bắt đầu kiểm tra", use_container_width=True)
 
 # Hàm đọc phòng thi công khai xử lý an toàn
+# Hàm đọc danh sách phòng thi chuẩn hóa từ Google Sheets
 def get_public_rooms():
     try:
-        res = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=1.5).json()
-        if isinstance(res, list):
-            # Bỏ qua hàng tiêu đề
-            return res[1:] if len(res) > 1 else []
-        return []
+        res = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=2.0).json()
+        rooms = []
+        if isinstance(res, list) and len(res) > 1:
+            # Bỏ qua hàng tiêu đề res[0]
+            for row in res[1:]:
+                if isinstance(row, list) and len(row) >= 6:
+                    rooms.append({
+                        "roomId": str(row[0]),
+                        "host": str(row[1]),
+                        "lessons": str(row[2]),
+                        "mode": str(row[3]),
+                        "numQ": row[4],
+                        "timeLimit": row[5],
+                        "status": str(row[6]) if len(row) > 6 else "WAITING"
+                    })
+        return rooms
     except Exception:
         return []
 
@@ -270,44 +282,31 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
             "time_limit": host_time_limit
         }
         try:
-            res = requests.get(GOOGLE_SHEET_URL, params=params, timeout=2.0).json()
-            if isinstance(res, dict) and res.get("roomId"):
-                st.success(f"Đã tạo phòng: **{res.get('roomId')}**")
-            else:
-                st.info("Đã tạo phòng thi!")
+            requests.get(GOOGLE_SHEET_URL, params=params, timeout=2.0)
+            st.success("🎉 Tạo phòng thành công!")
+            time.sleep(0.5) # Chờ Google Sheets ghi nhận
+            st.rerun() # Tải lại trang để danh sách phòng xuất hiện ngay
         except Exception:
-            st.info("Đã tạo phòng thi!")
+            st.info("Đã gửi yêu cầu tạo phòng!")
 
     st.write("---")
     st.markdown("**Danh Sách Phòng Hiện Có:**")
     rooms_list = get_public_rooms()
     if not rooms_list:
-        st.caption("Chưa có phòng thi nào. Nhấn 'Tạo Phòng Thi' để bắt đầu!")
+        st.caption("Chưa có phòng nào. Hãy nhấn 'Tạo Phòng Thi' ở trên!")
     else:
         for idx, rm in enumerate(rooms_list):
-            # Ép kiểu an toàn cả List lẫn Dict
-            if isinstance(rm, list) and len(rm) >= 6:
-                r_id = rm[0]
-                r_host = rm[1]
-                r_mode = rm[3]
-                r_num = rm[4]
-                r_time = rm[5]
-            elif isinstance(rm, dict):
-                r_id = rm.get("roomId", "ROOM")
-                r_host = rm.get("host", "Host")
-                r_mode = rm.get("mode", "Dạng 1")
-                r_num = rm.get("numQ", 5)
-                r_time = rm.get("timeLimit", 3)
-            else:
-                continue
+            r_id = rm["roomId"]
+            r_host = rm["host"]
+            r_mode = rm["mode"]
+            r_num = rm["numQ"]
+            r_time = rm["timeLimit"]
             
             st.markdown(f"**📌 {r_id}** (Host: {r_host})")
             st.caption(f"{r_mode} | {r_num} câu | {r_time} phút")
             if st.button(f"🎮 Gia nhập {r_id}", key=f"join_{r_id}_{idx}"):
                 st.session_state.in_room_exam = True
-                st.session_state.room_info = {
-                    "roomId": r_id, "host": r_host, "mode": r_mode, "numQ": r_num, "timeLimit": r_time
-                }
+                st.session_state.room_info = rm
                 st.session_state.room_q_index = 0
                 st.session_state.room_score = 0
                 st.session_state.room_start_time = time.time()
