@@ -43,7 +43,7 @@ st.markdown("""
 
 def play_audio_js(text):
     if not text: return
-    clean_text = text.replace("'", "\\'").replace('"', '\\"').replace("\n", " ")
+    clean_text = str(text).replace("'", "\\'").replace('"', '\\"').replace("\n", " ").strip()
     js_code = f"""
     <script>
         (function() {{
@@ -62,7 +62,7 @@ def play_audio_js(text):
 
 # Đồng hồ đếm ngược JS
 def render_js_timer(seconds, key_id, correct_ans_display):
-    clean_ans = correct_ans_display.replace("'", "\\'").replace('"', '\\"').replace("\n", " ")
+    clean_ans = str(correct_ans_display).replace("'", "\\'").replace('"', '\\"').replace("\n", " ").strip()
     js_timer_code = f"""
     <div id="timer-box-{key_id}" style="
         font-size: 20px; 
@@ -134,7 +134,7 @@ def fetch_rooms_from_sheet():
     return []
 
 # ==========================================
-# 📥 KHO DỮ LIỆU CƠ SỞ CHUẨN FULL (465 VOCAB & 129 SENTENCES)
+# 📥 KHO DỮ LIỆU CƠ SỞ CHUẨN FULL (ĐÃ LÀM SẠCH KÝ TỰ RÁC)
 # ==========================================
 FULL_VOCAB = [
     # Quyển 1 - Bài 1
@@ -891,14 +891,14 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
                 for _ in range(int(r_num)):
                     tgt = random.choice(pool)
                     if "Dạng 1" in r_mode:
-                        wrong_opts = [x.get("pinyin") for x in pool if x.get("pinyin") != tgt.get("pinyin")]
-                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt.get("pinyin")]
+                        wrong_opts = [x.get("pinyin").strip() for x in pool if x.get("pinyin").strip() != tgt.get("pinyin").strip()]
+                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt.get("pinyin").strip()]
                     elif "Dạng 2" in r_mode:
-                        wrong_opts = [x.get("char") for x in pool if x.get("char") != tgt.get("char")]
-                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt.get("char")]
+                        wrong_opts = [x.get("char").strip() for x in pool if x.get("char").strip() != tgt.get("char").strip()]
+                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt.get("char").strip()]
                     else:
-                        wrong_opts = [x.get("meaning") for x in pool if x.get("meaning") != tgt.get("meaning")]
-                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt.get("meaning")]
+                        wrong_opts = [x.get("meaning").strip() for x in pool if x.get("meaning").strip() != tgt.get("meaning").strip()]
+                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt.get("meaning").strip()]
                         
                     random.shuffle(opts)
                     questions_deck.append({"target": tgt, "options": opts, "mode": r_mode})
@@ -919,34 +919,37 @@ def new_question(mode_choice, lessons_choice):
 
     if "Dạng 4" in mode_choice:
         target = random.choice(sent_pool)
-        raw_sentence = re.sub(r'[？！。，、“”]', '', str(target.get("sentence", "")))
+        raw_sentence = re.sub(r'[？！。，、“”]', '', str(target.get("sentence", ""))).strip()
         words = list(raw_sentence)
         shuffled_words = list(words)
         random.shuffle(shuffled_words)
         st.session_state.question = {
-            "mode": 4, "meaning": target.get("meaning", ""), "correct_sentence": raw_sentence,
-            "shuffled_words": shuffled_words, "full_target": target.get("sentence", "")
+            "mode": 4, "meaning": str(target.get("meaning", "")).strip(), "correct_sentence": raw_sentence,
+            "shuffled_words": shuffled_words, "full_target": str(target.get("sentence", "")).strip()
         }
     else:
         target = random.choice(vocab_pool)
         
         if "Dạng 1" in mode_choice:
-            wrong_opts = [item.get("pinyin") for item in FULL_VOCAB if item.get("pinyin") != target.get("pinyin")]
-            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target.get("pinyin")]
+            target_ans = str(target.get("pinyin", "")).strip()
+            wrong_opts = [str(item.get("pinyin", "")).strip() for item in FULL_VOCAB if str(item.get("pinyin", "")).strip() != target_ans]
+            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target_ans]
             random.shuffle(opts)
-            st.session_state.question = {"mode": 1, "target": target, "options": opts, "correct_ans": target.get("pinyin")}
+            st.session_state.question = {"mode": 1, "target": target, "options": opts, "correct_ans": target_ans}
             
         elif "Dạng 2" in mode_choice:
-            wrong_opts = [item.get("char") for item in FULL_VOCAB if item.get("char") != target.get("char")]
-            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target.get("char")]
+            target_ans = str(target.get("char", "")).strip()
+            wrong_opts = [str(item.get("char", "")).strip() for item in FULL_VOCAB if str(item.get("char", "")).strip() != target_ans]
+            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target_ans]
             random.shuffle(opts)
-            st.session_state.question = {"mode": 2, "target": target, "options": opts, "correct_ans": target.get("char")}
+            st.session_state.question = {"mode": 2, "target": target, "options": opts, "correct_ans": target_ans}
             
         elif "Dạng 3" in mode_choice:
-            wrong_opts = [item.get("meaning") for item in FULL_VOCAB if item.get("meaning") != target.get("meaning")]
-            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target.get("meaning")]
+            target_ans = str(target.get("meaning", "")).strip()
+            wrong_opts = [str(item.get("meaning", "")).strip() for item in FULL_VOCAB if str(item.get("meaning", "")).strip() != target_ans]
+            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target_ans]
             random.shuffle(opts)
-            st.session_state.question = {"mode": 3, "target": target, "options": opts, "correct_ans": target.get("meaning")}
+            st.session_state.question = {"mode": 3, "target": target, "options": opts, "correct_ans": target_ans}
 
 if start_button:
     st.session_state.quiz_started = True
@@ -1064,7 +1067,7 @@ elif st.session_state.get("in_room_exam", False):
         
         ans = st.radio("Chọn đáp án:", options, index=None, key=f"rm_ans_{curr_idx}")
         if ans is not None:
-            if ans in correct_ans or correct_ans.startswith(ans): 
+            if ans.strip() in correct_ans or correct_ans.startswith(ans.strip()): 
                 st.session_state.room_score += 1
                 st.success(f"🎉 Chính xác! **{correct_ans}**")
             else:
@@ -1091,7 +1094,7 @@ elif st.session_state.get("question"):
     timer_limit = st.session_state.get("active_timer", 15)
     remaining = max(0, int(timer_limit - elapsed))
 
-    # TÍNH CHUỖI HIỂN THỊ ĐÁP ÁN CHUẨN (KÈM DỊCH NGHĨA TIẾNG VIỆT FOR ALL MODES)
+    # TÍNH CHUỖI HIỂN THỊ ĐÁP ÁN CHUẨN (KÈM DỊCH NGHĨA TIẾNG VIỆT CHO TẤT CẢ CÁC DẠNG)
     if q.get("mode") == 4:
         correct_ans_display = f"{q['full_target']} ({q['meaning']})"
     elif q["mode"] == 1:
@@ -1147,7 +1150,7 @@ elif st.session_state.get("question"):
         # TỰ ĐỘNG CHẤM ĐIỂM KHI CHỌN ĐỦ TOÀN BỘ CÁC CHỮ
         if len(selected_indices) == num_words and not has_answered:
             st.session_state.total += 1
-            is_correct = (user_sentence_str == q["correct_sentence"])
+            is_correct = (user_sentence_str.strip() == q["correct_sentence"].strip())
             st.session_state.score += (1 if is_correct else 0)
             st.session_state[score_flag_key] = is_correct
             st.rerun()
@@ -1164,8 +1167,10 @@ elif st.session_state.get("question"):
                 new_question(st.session_state.active_mode, st.session_state.active_lessons)
                 st.rerun()
 
-        # TH2: CHƯA TRẢ LỜI -> HIỂN THỊ TIMER VÀ NÚT ĐIỀU HƯỚNG
+        # TH2: CHƯA TRẢ LỜI -> HIỂN THỊ TIMER (NẾU HẾT GIỜ SẼ PHÁT ÂM CÂU ĐÚNG)
         else:
+            if remaining <= 0:
+                play_audio_js(q["full_target"])
             render_js_timer(remaining, st.session_state.q_id, correct_ans_display)
             if st.button("Sang câu tiếp theo ➡️", key=f"timeout_sent_next_{st.session_state.q_id}", use_container_width=True):
                 new_question(st.session_state.active_mode, st.session_state.active_lessons)
@@ -1202,7 +1207,7 @@ elif st.session_state.get("question"):
             
             if user_choice is not None:
                 st.session_state.total += 1
-                is_correct = (user_choice == q["correct_ans"])
+                is_correct = (str(user_choice).strip() == str(q["correct_ans"]).strip())
                 st.session_state.score += (1 if is_correct else 0)
                 st.session_state[score_flag_key] = is_correct
                 st.rerun()
