@@ -5,6 +5,8 @@ import requests
 import json
 import time
 import re
+import datetime
+import pandas as pd
 import streamlit.components.v1 as components
 
 st.set_page_config(page_title="App Ôn Tập Từ Vựng HSK - MSUTONG 1 & 2", layout="centered")
@@ -25,6 +27,9 @@ st.markdown("""
         border: 2px solid #4CAF50;
     }
     div[data-testid="stRadio"] > div { gap: 15px; }
+    .leaderboard-title {
+        color: #1E88E5; font-size: 22px; font-weight: bold; margin-top: 15px; margin-bottom: 10px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -47,7 +52,7 @@ def play_audio_js(text):
     """
     components.html(js_code, height=0, width=0)
 
-# Đồng hồ đếm ngược JS siêu mượt (chạy phía Trình duyệt)
+# Đồng hồ đếm ngược JS mượt mà
 def render_js_timer(seconds, key_id):
     js_timer_code = f"""
     <div id="timer-box-{key_id}" style="
@@ -77,6 +82,10 @@ def render_js_timer(seconds, key_id):
                     box.style.backgroundColor = "#FFE0B2";
                     box.style.color = "#E65100";
                     box.innerHTML = "⏰ Đã hết thời gian làm câu này!";
+                    try {{
+                        var timeoutBtn = window.parent.document.querySelector('button[key="auto_timeout_trigger_{key_id}"]');
+                        if (timeoutBtn) timeoutBtn.click();
+                    }} catch(e) {{}}
                 }} else {{
                     elem.innerHTML = timeLeft;
                 }}
@@ -86,7 +95,7 @@ def render_js_timer(seconds, key_id):
     """
     components.html(js_timer_code, height=55)
 
-# Hàm phân tích số Quyển và số Bài để so sánh chính xác 100%
+# Hàm phân tích bài học
 def parse_book_and_lesson(text):
     if not text: return ("", "")
     s = str(text).strip()
@@ -110,7 +119,7 @@ def is_lesson_selected(item_lesson, selected_lessons):
     return False
 
 # ==========================================
-# 📥 KHO DỮ LIỆU CHUẨN FULL (465 VOCAB & 129 SENTENCES)
+# 📥 KHO DỮ LIỆU CƠ SỞ CHUẨN FULL (465 VOCAB & 129 SENTENCES)
 # ==========================================
 FULL_VOCAB = [
     # Quyển 1 - Bài 1
@@ -440,7 +449,7 @@ FULL_VOCAB = [
     {"char": "早", "pinyin": "zǎo", "meaning": "sớm", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"char": "睡觉", "pinyin": "shuìjiào", "meaning": "ngủ", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"char": "睡", "pinyin": "shuì", "meaning": "ngủ", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
-    {"char": "เพราะ为", "pinyin": "yīnwèi", "meaning": "bởi vì", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
+    {"char": "因为", "pinyin": "yīnwèi", "meaning": "bởi vì", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"char": "晚", "pinyin": "wǎn", "meaning": "muộn", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
 
     # Quyển 2 - Bài 3
@@ -535,7 +544,7 @@ FULL_VOCAB = [
     {"char": "爱", "pinyin": "ài", "meaning": "thích, yêu", "lesson": "Quyển 2 - Bài 6: 上个周末你做什么了?"},
 
     # Quyển 2 - Bài 7
-    {"char": "告诉", "pinyin": "gàosu", "meaning": "nói với", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
+    {"char": "告诉", "pinyin": "gàosu", "meaning": "nói với", "lesson": "Quyển 2 - Bài 7: 你是跟谁一起去的?"},
     {"char": "微信", "pinyin": "wēixìn", "meaning": "WeChat", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
     {"char": "忘", "pinyin": "wàng", "meaning": "quên, quên mất", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
     {"char": "哈哈", "pinyin": "hāhā", "meaning": "ha ha", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
@@ -800,16 +809,22 @@ DYNAMIC_LESSONS = [
     "Quyển 2 - Bài 9: 你见过熊猫吗?", "Quyển 2 - Bài 10: 给您添麻烦了!"
 ]
 
-# Khởi tạo trạng thái
+# Khởi tạo trạng thái Session
 for k in ["score", "total", "q_id"]:
     if k not in st.session_state: st.session_state[k] = 0
 if "quiz_started" not in st.session_state: st.session_state.quiz_started = False
 if "quiz_finished" not in st.session_state: st.session_state.quiz_finished = False
 if "start_time" not in st.session_state: st.session_state.start_time = time.time()
+if "local_leaderboard" not in st.session_state:
+    st.session_state.local_leaderboard = [
+        {"name": "Giáo viên tập sự", "score": 10, "total": 10, "mode": "Dạng 1", "date": "17/09/2026 14:30"},
+        {"name": "Thành viên HSK", "score": 8, "total": 10, "mode": "Dạng 4", "date": "17/09/2026 12:15"}
+    ]
 
 # --- 1. THANH BÊN CẤU HÌNH CÁ NHÂN ---
 st.sidebar.title("👤 Thông Tin Người Làm")
-user_name = st.sidebar.text_input("Họ và tên (không bắt buộc):", placeholder="Nhập tên của bạn...")
+user_name = st.sidebar.text_input("Họ và tên (không bắt buộc):", value=st.session_state.get("user_name", ""), placeholder="Nhập tên của bạn...")
+st.session_state.user_name = user_name
 
 st.sidebar.title("⚙️ Tùy Chỉnh Bài Học")
 selected_lessons = st.sidebar.multiselect("Lựa chọn bài kiểm tra:", options=DYNAMIC_LESSONS, default=DYNAMIC_LESSONS[:5])
@@ -936,12 +951,68 @@ if start_button:
 
 st.title("🎓 App Kiểm Tra Từ Vựng & Ngữ Pháp MSUTONG")
 
-# --- GIAO DIỆN TỔNG KẾT BÀI THI ---
+# ==========================================
+# 📊 GIAO DIỆN TỔNG KẾT BÀI THI & BẢNG TỶ SỐ
+# ==========================================
 if st.session_state.get("quiz_finished", False):
     st.balloons()
     st.success("🎉 BẠN ĐÃ HOÀN THÀNH BÀI KIỂM TRA!")
-    st.write(f"📊 Điểm số chung cuộc: **{st.session_state.get('score', 0)} / {st.session_state.get('total', 0)}** câu đúng.")
-    if st.button("🔄 Làm bài kiểm tra mới"):
+    
+    total_q = st.session_state.get('total', 0)
+    score_q = st.session_state.get('score', 0)
+    ratio = round((score_q / total_q) * 100, 1) if total_q > 0 else 0
+    
+    st.metric(label="📊 Điểm số chung cuộc", value=f"{score_q} / {total_q} câu đúng", delta=f"{ratio}% Tỷ lệ chính xác")
+    
+    st.write("---")
+    st.markdown("<div class='leaderboard-title'>📝 Cập nhật tên & Lưu điểm vào Bảng Tỷ Số</div>", unsafe_allow_html=True)
+    
+    col_name, col_save = st.columns([3, 1])
+    with col_name:
+        update_name = st.text_input("👤 Họ và tên người làm (không bắt buộc):", value=st.session_state.get("user_name", ""), key="end_user_name_input")
+    with col_save:
+        st.write(" ")
+        st.write(" ")
+        save_score_btn = st.button("💾 Lưu Bảng Tỷ Số", use_container_width=True)
+        
+    if save_score_btn:
+        final_name = update_name.strip() if update_name.strip() else "Ẩn danh"
+        st.session_state.user_name = final_name
+        now_str = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+        
+        new_entry = {
+            "name": final_name,
+            "score": score_q,
+            "total": total_q,
+            "mode": st.session_state.get("active_mode", "Dạng 1"),
+            "date": now_str
+        }
+        st.session_state.local_leaderboard.insert(0, new_entry)
+        
+        # Gửi điểm lên Google Sheet
+        try:
+            params = {
+                "action": "save_score",
+                "name": final_name,
+                "score": score_q,
+                "total": total_q,
+                "mode": st.session_state.get("active_mode", "Dạng 1")
+            }
+            requests.get(GOOGLE_SHEET_URL, params=params, timeout=1.5)
+        except Exception:
+            pass
+            
+        st.success(f"✅ Đã ghi nhận kết quả của **{final_name}** vào Bảng Tỷ Số!")
+
+    st.write("---")
+    st.markdown("<div class='leaderboard-title'>🏆 BẢNG TỶ SỐ CÁC THÀNH VIÊN</div>", unsafe_allow_html=True)
+    if st.session_state.local_leaderboard:
+        df_lb = pd.DataFrame(st.session_state.local_leaderboard)
+        df_lb.columns = ["Họ và tên", "Điểm", "Tổng câu", "Dạng bài", "Thời gian"]
+        st.dataframe(df_lb, use_container_width=True, hide_index=True)
+
+    st.write(" ")
+    if st.button("🔄 Làm bài kiểm tra mới", use_container_width=True):
         st.session_state.quiz_started = False
         st.session_state.quiz_finished = False
         st.rerun()
@@ -1027,32 +1098,22 @@ elif st.session_state.get("question"):
             else:
                 st.error(f"❌ Chưa đúng rồi! Đáp án chuẩn: **{q['full_target']}**")
             
-            col1, col2 = st.columns([3, 2])
-            with col1:
-                if st.button("Câu tiếp theo ➡️", key=f"sent_next_{st.session_state.q_id}"):
-                    new_question(st.session_state.active_mode, st.session_state.active_lessons)
-                    st.rerun()
-            with col2:
-                if st.button("🏁 Kết thúc kiểm tra", key=f"sent_finish_{st.session_state.q_id}"):
-                    st.session_state.quiz_finished = True
-                    st.rerun()
+            if st.button("Câu tiếp theo ➡️", key=f"sent_next_{st.session_state.q_id}", use_container_width=True):
+                new_question(st.session_state.active_mode, st.session_state.active_lessons)
+                st.rerun()
         else:
             if remaining <= 0:
                 st.error("⏰ Hết thời gian làm câu này!")
                 st.warning(f"💡 Đáp án đúng là: **{q['full_target']}** (*{q.get('meaning', '')}*)")
                 play_audio_js(q['full_target'])
                 
-                col1, col2 = st.columns([3, 2])
-                with col1:
-                    if st.button("Sang câu tiếp theo ➡️", key=f"timeout_sent_next_{st.session_state.q_id}"):
-                        new_question(st.session_state.active_mode, st.session_state.active_lessons)
-                        st.rerun()
-                with col2:
-                    if st.button("🏁 Kết thúc kiểm tra", key=f"timeout_sent_finish_{st.session_state.q_id}"):
-                        st.session_state.quiz_finished = True
-                        st.rerun()
+                if st.button("Sang câu tiếp theo ➡️", key=f"timeout_sent_next_{st.session_state.q_id}", use_container_width=True):
+                    new_question(st.session_state.active_mode, st.session_state.active_lessons)
+                    st.rerun()
             else:
                 render_js_timer(remaining, st.session_state.q_id)
+                # Nút kịch bản tự kích hoạt hết giờ
+                st.button("Hết giờ", key=f"auto_timeout_trigger_{st.session_state.q_id}", help="Ẩn")
 
     # --- DẠNG 1, 2, 3: TRẮC NGHIỆM ---
     else:
@@ -1066,22 +1127,16 @@ elif st.session_state.get("question"):
             st.markdown(f"<h3 style='text-align: center; color: #666;'>{q['target']['pinyin']}</h3>", unsafe_allow_html=True)
             play_audio_js(q['target']['char'])
 
-        # TH1: Đã chọn đáp án -> Ẩn đồng hồ đếm ngược, chỉ hiện 1 dòng kết quả + Nút điều hướng
+        # TH1: Đã chọn đáp án -> Chỉ hiện 1 dòng kết quả + Nút Sang câu tiếp theo
         if has_answered:
             if st.session_state[score_flag_key]:
                 st.success("🎉 Chính xác!")
             else:
                 st.error(f"❌ Sai rồi! Đáp án đúng: **{q['correct_ans']}** ({q['target'].get('meaning', '')})")
 
-            col1, col2 = st.columns([3, 2])
-            with col1:
-                if st.button("Câu tiếp theo ➡️", key=f"ans_next_{st.session_state.q_id}"):
-                    new_question(st.session_state.active_mode, st.session_state.active_lessons)
-                    st.rerun()
-            with col2:
-                if st.button("🏁 Kết thúc kiểm tra", key=f"ans_finish_{st.session_state.q_id}"):
-                    st.session_state.quiz_finished = True
-                    st.rerun()
+            if st.button("Câu tiếp theo ➡️", key=f"ans_next_{st.session_state.q_id}", use_container_width=True):
+                new_question(st.session_state.active_mode, st.session_state.active_lessons)
+                st.rerun()
 
         # TH2: Chưa chọn đáp án
         else:
@@ -1092,15 +1147,9 @@ elif st.session_state.get("question"):
                 if q['target'].get('char'):
                     play_audio_js(q['target']['char'])
                 
-                col1, col2 = st.columns([3, 2])
-                with col1:
-                    if st.button("Sang câu tiếp theo ➡️", key=f"timeout_next_{st.session_state.q_id}"):
-                        new_question(st.session_state.active_mode, st.session_state.active_lessons)
-                        st.rerun()
-                with col2:
-                    if st.button("🏁 Kết thúc kiểm tra", key=f"timeout_finish_{st.session_state.q_id}"):
-                        st.session_state.quiz_finished = True
-                        st.rerun()
+                if st.button("Sang câu tiếp theo ➡️", key=f"timeout_next_{st.session_state.q_id}", use_container_width=True):
+                    new_question(st.session_state.active_mode, st.session_state.active_lessons)
+                    st.rerun()
             else:
                 render_js_timer(remaining, st.session_state.q_id)
                 user_choice = st.radio("Chọn đáp án:", q["options"], index=None, key=f"radio_{st.session_state.q_id}")
@@ -1112,5 +1161,12 @@ elif st.session_state.get("question"):
                     st.session_state[score_flag_key] = is_correct
                     st.rerun()
 
+    # --- NÚT KẾT THÚC BÀI KIỂM TRA ĐẶT BIỆT LẬP Ở DƯỚI CÙNG TRANG ---
+    st.divider()
+    st.caption("Nếu muốn dừng bài kiểm tra tại đây, nhấn nút bên dưới:")
+    if st.button("🏁 Kết thúc bài kiểm tra", key=f"global_finish_{st.session_state.q_id}"):
+        st.session_state.quiz_finished = True
+        st.rerun()
+
 st.sidebar.markdown("---")
-st.sidebar.markdown(f"🏆 **Điểm số của bạn:** {st.session_state.get('score', 0)} / {st.session_state.get('total', 0)}")
+st.sidebar.markdown(f"🏆 **Điểm số hiện tại:** {st.session_state.get('score', 0)} / {st.session_state.get('total', 0)}")
