@@ -3,15 +3,13 @@ import streamlit as st
 import random
 import pandas as pd
 import requests
-import base64
-from io import BytesIO
-from gtts import gTTS
 import streamlit.components.v1 as components
 
 # 1. Cấu hình trang web
 st.set_page_config(page_title="App Ôn Tập Từ Vựng HSK - MSUTONG 1 & 2", layout="centered")
 
-GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyFGBMkcRyOK1z_Hw7KEd3zSnJvnKQGxn-6MUnMwFyC4StagIWtbWqQe5MqgPkkqDb4/exec"
+# Dán URL Apps Script chuẩn của bạn vào đây
+GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxcnKRCCcd-iIkzspRGjS4jnwdCU3A25FwAVCBWlmJHMKT2le5kYd22O3i-V-fv3c0V/exec"
 
 st.markdown("""
     <style>
@@ -44,37 +42,28 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Khai báo hàm phát âm chuẩn hóa MP3 Base64
+# Hàm phát âm JS chạy ngay lập tức không gây trễ ứng dụng
 def play_audio_js(text):
     if not text:
         return
-    try:
-        tts = gTTS(text=text, lang='zh-CN', slow=False)
-        fp = BytesIO()
-        tts.write_to_fp(fp)
-        fp.seek(0)
-        audio_bytes = fp.read()
-        b64_audio = base64.b64encode(audio_bytes).decode('utf-8')
-        random_id = random.randint(10000, 99999)
-        
-        audio_html = f'''
-            <div style="text-align: center; margin: 5px 0;">
-                <audio autoplay id="aud_{random_id}" style="height: 35px; width: 260px;">
-                    <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
-                </audio>
-            </div>
-            <script>
-                (function() {{
-                    try {{
-                        var aud = document.getElementById("aud_{random_id}");
-                        if (aud) {{ aud.play(); }}
-                    }} catch(e) {{}}
-                }})();
-            </script>
-        '''
-        components.html(audio_html, height=45)
-    except Exception:
-        pass
+    clean_text = text.replace("'", "\\'").replace('"', '\\"').replace("\n", " ")
+    js_code = f"""
+    <script>
+        (function() {{
+            try {{
+                var synth = window.parent.speechSynthesis || window.speechSynthesis;
+                if (synth) {{
+                    synth.cancel();
+                    var msg = new SpeechSynthesisUtterance("{clean_text}");
+                    msg.lang = "zh-CN";
+                    msg.rate = 0.85;
+                    synth.speak(msg);
+                }}
+            }} catch(e) {{}}
+        }})();
+    </script>
+    """
+    components.html(js_code, height=0, width=0)
 
 # Danh mục Tên 20 bài học chuẩn MSUTONG
 LESSON_NAMES = {
@@ -100,7 +89,7 @@ LESSON_NAMES = {
     "Q2_10": "Quyển 2 - Bài 10: 给您添麻烦了! (Gěi nín tiān máfan le!)"
 }
 
-# FULL TỪ VỰNG CHÍNH VÀ TỪ BỔ SUNG
+# FULL TỪ VỰNG CHÍNH VÀ TỪ BỔ SUNG (CỐ ĐỊNH)
 VOCAB_DATA = [
     # QUYỂN 1: BÀI 1
     {"char": "你好", "pinyin": "nǐ hǎo", "meaning": "xin chào", "lesson": LESSON_NAMES["Q1_1"]},
