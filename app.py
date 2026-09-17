@@ -52,7 +52,7 @@ def play_audio_js(text):
     """
     components.html(js_code, height=0, width=0)
 
-# Đồng hồ đếm ngược JS mượt mà
+# Đồng hồ đếm ngược JS tự động gửi tín hiệu kích hoạt hiển thị đáp án khi về 0s
 def render_js_timer(seconds, key_id):
     js_timer_code = f"""
     <div id="timer-box-{key_id}" style="
@@ -81,11 +81,14 @@ def render_js_timer(seconds, key_id):
                     elem.innerHTML = "0";
                     box.style.backgroundColor = "#FFE0B2";
                     box.style.color = "#E65100";
-                    box.innerHTML = "⏰ Đã hết thời gian làm câu này!";
+                    box.innerHTML = "⏰ Đã hết thời gian! Đang hiển thị đáp án...";
                     try {{
-                        var timeoutBtn = window.parent.document.querySelector('button[key="auto_timeout_trigger_{key_id}"]');
-                        if (timeoutBtn) timeoutBtn.click();
-                    }} catch(e) {{}}
+                        var url = new URL(window.parent.location.href);
+                        url.searchParams.set('timeout', Date.now());
+                        window.parent.location.href = url.href;
+                    }} catch(e) {{
+                        try {{ window.parent.location.reload(); }} catch(e2) {{}}
+                    }}
                 }} else {{
                     elem.innerHTML = timeLeft;
                 }}
@@ -95,7 +98,7 @@ def render_js_timer(seconds, key_id):
     """
     components.html(js_timer_code, height=55)
 
-# Hàm phân tích bài học
+# Hàm phân tích số Quyển và số Bài
 def parse_book_and_lesson(text):
     if not text: return ("", "")
     s = str(text).strip()
@@ -449,7 +452,7 @@ FULL_VOCAB = [
     {"char": "早", "pinyin": "zǎo", "meaning": "sớm", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"char": "睡觉", "pinyin": "shuìjiào", "meaning": "ngủ", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"char": "睡", "pinyin": "shuì", "meaning": "ngủ", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
-    {"char": "因为", "pinyin": "yīnwèi", "meaning": "bởi vì", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
+    {"char": "เพราะ为", "pinyin": "yīnwèi", "meaning": "bởi vì", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"char": "晚", "pinyin": "wǎn", "meaning": "muộn", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
 
     # Quyển 2 - Bài 3
@@ -544,7 +547,7 @@ FULL_VOCAB = [
     {"char": "爱", "pinyin": "ài", "meaning": "thích, yêu", "lesson": "Quyển 2 - Bài 6: 上个周末你做什么了?"},
 
     # Quyển 2 - Bài 7
-    {"char": "告诉", "pinyin": "gàosu", "meaning": "nói với", "lesson": "Quyển 2 - Bài 7: 你是跟谁一起去的?"},
+    {"char": "告诉", "pinyin": "gàosu", "meaning": "nói với", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
     {"char": "微信", "pinyin": "wēixìn", "meaning": "WeChat", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
     {"char": "忘", "pinyin": "wàng", "meaning": "quên, quên mất", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
     {"char": "哈哈", "pinyin": "hāhā", "meaning": "ha ha", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
@@ -895,7 +898,7 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
                 st.session_state.room_questions = questions_deck
                 st.rerun()
 
-# HÀM TẠO CÂU HỎI MỚI (Lọc bài chính xác 100%)
+# HÀM TẠO CÂU HỎI MỚI
 def new_question(mode_choice, lessons_choice):
     st.session_state.q_id += 1
     st.session_state.start_time = time.time()
@@ -1112,8 +1115,6 @@ elif st.session_state.get("question"):
                     st.rerun()
             else:
                 render_js_timer(remaining, st.session_state.q_id)
-                # Nút kịch bản tự kích hoạt hết giờ
-                st.button("Hết giờ", key=f"auto_timeout_trigger_{st.session_state.q_id}", help="Ẩn")
 
     # --- DẠNG 1, 2, 3: TRẮC NGHIỆM ---
     else:
