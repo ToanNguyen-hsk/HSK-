@@ -52,8 +52,9 @@ def play_audio_js(text):
     """
     components.html(js_code, height=0, width=0)
 
-# Đồng hồ đếm ngược JS tự động gửi tín hiệu kích hoạt hiển thị đáp án khi về 0s
-def render_js_timer(seconds, key_id):
+# Đồng hồ đếm ngược JS tự nhảy đáp án trực tiếp trong DOM khi về 0s (không reload trang)
+def render_js_timer(seconds, key_id, correct_ans_display):
+    clean_ans = correct_ans_display.replace("'", "\\'").replace('"', '\\"').replace("\n", " ")
     js_timer_code = f"""
     <div id="timer-box-{key_id}" style="
         font-size: 20px; 
@@ -61,11 +62,11 @@ def render_js_timer(seconds, key_id):
         color: #D32F2F; 
         text-align: center;
         background-color: #FFEBEE; 
-        padding: 8px 12px; 
+        padding: 10px 14px; 
         border-radius: 8px; 
         border: 1px solid #FFCDD2;
         font-family: sans-serif;
-        margin-bottom: 10px;">
+        margin-bottom: 12px;">
         ⏱️ Thời gian còn lại: <span id="count-{key_id}">{seconds}</span> giây
     </div>
     <script>
@@ -78,17 +79,10 @@ def render_js_timer(seconds, key_id):
                 timeLeft--;
                 if (timeLeft <= 0) {{
                     clearInterval(timerId);
-                    elem.innerHTML = "0";
-                    box.style.backgroundColor = "#FFE0B2";
+                    box.style.backgroundColor = "#FFF3E0";
+                    box.style.borderColor = "#FFE0B2";
                     box.style.color = "#E65100";
-                    box.innerHTML = "⏰ Đã hết thời gian! Đang hiển thị đáp án...";
-                    try {{
-                        var url = new URL(window.parent.location.href);
-                        url.searchParams.set('timeout', Date.now());
-                        window.parent.location.href = url.href;
-                    }} catch(e) {{
-                        try {{ window.parent.location.reload(); }} catch(e2) {{}}
-                    }}
+                    box.innerHTML = "⏰ <b>Đã hết thời gian làm câu này!</b><br><span style='font-size: 17px; color: #2E7D32;'>💡 Đáp án đúng: <b>{clean_ans}</b></span>";
                 }} else {{
                     elem.innerHTML = timeLeft;
                 }}
@@ -96,7 +90,7 @@ def render_js_timer(seconds, key_id):
         }})();
     </script>
     """
-    components.html(js_timer_code, height=55)
+    components.html(js_timer_code, height=68)
 
 # Hàm phân tích số Quyển và số Bài
 def parse_book_and_lesson(text):
@@ -1043,21 +1037,21 @@ elif st.session_state.get("in_room_exam", False):
         if "Dạng 1" in r_mode:
             st.markdown(f"<h1 style='text-align: center; font-size: 90px; color: #1E88E5;'>{target.get('char')}</h1>", unsafe_allow_html=True)
             play_audio_js(target.get('char'))
-            correct_ans = target.get("pinyin")
+            correct_ans = f"{target.get('pinyin')} ({target.get('meaning', '')})"
         elif "Dạng 2" in r_mode:
             st.markdown(f"<h1 style='text-align: center; font-size: 70px; color: #1E88E5;'>{target.get('pinyin')}</h1>", unsafe_allow_html=True)
-            correct_ans = target.get("char")
+            correct_ans = f"{target.get('char')} ({target.get('meaning', '')})"
         else:
             st.markdown(f"<h1 style='text-align: center; font-size: 80px; color: #1E88E5;'>{target.get('char')}</h1>", unsafe_allow_html=True)
             play_audio_js(target.get('char'))
             st.markdown(f"<h3 style='text-align: center; color: #666;'>{target.get('pinyin')}</h3>", unsafe_allow_html=True)
-            correct_ans = target.get("meaning")
+            correct_ans = f"{target.get('meaning')} ({target.get('pinyin', '')})"
         
         ans = st.radio("Chọn đáp án:", options, index=None, key=f"rm_ans_{curr_idx}")
         if ans is not None:
-            if ans == correct_ans: 
+            if ans in correct_ans or correct_ans.startswith(ans): 
                 st.session_state.room_score += 1
-                st.success("🎉 Chính xác!")
+                st.success(f"🎉 Chính xác! **{correct_ans}**")
             else:
                 st.error(f"❌ Sai rồi! Đáp án đúng: **{correct_ans}**")
                 
@@ -1078,6 +1072,16 @@ elif st.session_state.get("question"):
     timer_limit = st.session_state.get("active_timer", 15)
     remaining = max(0, int(timer_limit - elapsed))
 
+    # TÍNH CHUỖI HIỂN THỊ ĐÁP ÁN CHUẨN (KÈM DỊCH NGHĨA TIẾNG VIỆT FOR ALL MODES)
+    if q.get("mode") == 4:
+        correct_ans_display = f"{q['full_target']} ({q['meaning']})"
+    elif q["mode"] == 1:
+        correct_ans_display = f"{q['target']['pinyin']} ({q['target']['meaning']})"
+    elif q["mode"] == 2:
+        correct_ans_display = f"{q['target']['char']} ({q['target']['meaning']})"
+    elif q["mode"] == 3:
+        correct_ans_display = f"{q['target']['meaning']} ({q['target']['pinyin']})"
+
     # --- DẠNG 4: GHÉP CÂU ---
     if q.get("mode") == 4:
         st.subheader("🧩 Bài Tập Ghép Câu Hội Thoại")
@@ -1096,10 +1100,10 @@ elif st.session_state.get("question"):
 
         if has_answered:
             if st.session_state[score_flag_key]:
-                st.success(f"🎉 Rất xuất sắc! Câu chuẩn: **{q['full_target']}**")
+                st.success(f"🎉 Rất xuất sắc! Câu chuẩn: **{q['full_target']}** ({q['meaning']})")
                 play_audio_js(q["full_target"])
             else:
-                st.error(f"❌ Chưa đúng rồi! Đáp án chuẩn: **{q['full_target']}**")
+                st.error(f"❌ Chưa đúng rồi! Đáp án chuẩn: **{q['full_target']}** ({q['meaning']})")
             
             if st.button("Câu tiếp theo ➡️", key=f"sent_next_{st.session_state.q_id}", use_container_width=True):
                 new_question(st.session_state.active_mode, st.session_state.active_lessons)
@@ -1107,14 +1111,14 @@ elif st.session_state.get("question"):
         else:
             if remaining <= 0:
                 st.error("⏰ Hết thời gian làm câu này!")
-                st.warning(f"💡 Đáp án đúng là: **{q['full_target']}** (*{q.get('meaning', '')}*)")
+                st.warning(f"💡 Đáp án đúng là: **{correct_ans_display}**")
                 play_audio_js(q['full_target'])
                 
                 if st.button("Sang câu tiếp theo ➡️", key=f"timeout_sent_next_{st.session_state.q_id}", use_container_width=True):
                     new_question(st.session_state.active_mode, st.session_state.active_lessons)
                     st.rerun()
             else:
-                render_js_timer(remaining, st.session_state.q_id)
+                render_js_timer(remaining, st.session_state.q_id, correct_ans_display)
 
     # --- DẠNG 1, 2, 3: TRẮC NGHIỆM ---
     else:
@@ -1131,9 +1135,9 @@ elif st.session_state.get("question"):
         # TH1: Đã chọn đáp án -> Chỉ hiện 1 dòng kết quả + Nút Sang câu tiếp theo
         if has_answered:
             if st.session_state[score_flag_key]:
-                st.success("🎉 Chính xác!")
+                st.success(f"🎉 Chính xác! **{correct_ans_display}**")
             else:
-                st.error(f"❌ Sai rồi! Đáp án đúng: **{q['correct_ans']}** ({q['target'].get('meaning', '')})")
+                st.error(f"❌ Sai rồi! Đáp án đúng: **{correct_ans_display}**")
 
             if st.button("Câu tiếp theo ➡️", key=f"ans_next_{st.session_state.q_id}", use_container_width=True):
                 new_question(st.session_state.active_mode, st.session_state.active_lessons)
@@ -1143,8 +1147,7 @@ elif st.session_state.get("question"):
         else:
             if remaining <= 0:
                 st.error("⏰ Hết thời gian làm câu này!")
-                meaning_info = f" - *{q['target'].get('meaning', '')}*" if q['target'].get('meaning') else ""
-                st.warning(f"💡 Đáp án đúng là: **{q['correct_ans']}**{meaning_info}")
+                st.warning(f"💡 Đáp án đúng là: **{correct_ans_display}**")
                 if q['target'].get('char'):
                     play_audio_js(q['target']['char'])
                 
@@ -1152,7 +1155,7 @@ elif st.session_state.get("question"):
                     new_question(st.session_state.active_mode, st.session_state.active_lessons)
                     st.rerun()
             else:
-                render_js_timer(remaining, st.session_state.q_id)
+                render_js_timer(remaining, st.session_state.q_id, correct_ans_display)
                 user_choice = st.radio("Chọn đáp án:", q["options"], index=None, key=f"radio_{st.session_state.q_id}")
                 
                 if user_choice is not None:
