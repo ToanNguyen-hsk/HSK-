@@ -240,26 +240,36 @@ quiz_mode = st.sidebar.radio(
 
 start_button = st.sidebar.button("🚀 Bắt đầu kiểm tra", use_container_width=True)
 
-# Hàm lấy danh sách phòng thi
+# Khởi tạo danh sách lưu trữ local nếu chưa có
+if "local_rooms" not in st.session_state:
+    st.session_state.local_rooms = []
+
+# Hàm đọc phòng thi hợp nhất từ cả Google Sheets và bộ nhớ Local
 def get_public_rooms():
+    fetched_rooms = []
     try:
-        res = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=2.0).json()
-        rooms = []
+        res = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=1.5).json()
         if isinstance(res, list) and len(res) > 1:
             for row in res[1:]:
                 if isinstance(row, list) and len(row) >= 6:
-                    rooms.append({
+                    fetched_rooms.append({
                         "roomId": str(row[0]),
                         "host": str(row[1]),
                         "lessons": str(row[2]),
                         "mode": str(row[3]),
                         "numQ": row[4],
-                        "timeLimit": row[5],
-                        "status": str(row[6]) if len(row) > 6 else "WAITING"
+                        "timeLimit": row[5]
                     })
-        return rooms
     except Exception:
-        return []
+        pass
+    
+    # Hợp nhất phòng từ Server và Local tránh bị trễ
+    all_rooms = list(st.session_state.local_rooms)
+    for fr in fetched_rooms:
+        if not any(r["roomId"] == fr["roomId"] for r in all_rooms):
+            all_rooms.append(fr)
+            
+    return all_rooms
 
 # --- SIDEBAR EXPANDER: PHÒNG THI MULTIPLAYER ---
 with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True):
@@ -270,6 +280,20 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
     
     if st.button("➕ Tạo Phòng Thi"):
         h_name = user_name.strip() if user_name.strip() else "Ẩn danh"
+        new_room_id = f"ROOM_{random.randint(1000, 9999)}"
+        new_room_obj = {
+            "roomId": new_room_id,
+            "host": h_name,
+            "lessons": json.dumps(selected_lessons),
+            "mode": host_mode,
+            "numQ": host_num_questions,
+            "timeLimit": host_time_limit
+        }
+        
+        # 1. Lưu ngay vào local session để hiển thị lập tức
+        st.session_state.local_rooms.insert(0, new_room_obj)
+        
+        # 2. Gửi đồng bộ lên Google Sheets ngầm
         params = {
             "action": "create_room",
             "host": h_name,
@@ -279,12 +303,12 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
             "time_limit": host_time_limit
         }
         try:
-            requests.get(GOOGLE_SHEET_URL, params=params, timeout=2.0)
-            st.success("🎉 Tạo phòng thành công!")
-            time.sleep(0.5)
-            st.rerun()
+            requests.get(GOOGLE_SHEET_URL, params=params, timeout=1.5)
         except Exception:
-            st.info("Đã gửi tạo phòng!")
+            pass
+            
+        st.success(f"🎉 Đã tạo phòng: **{new_room_id}**")
+        st.rerun()
 
     st.write("---")
     st.markdown("**Danh Sách Phòng Hiện Có:**")
