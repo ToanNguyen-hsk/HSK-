@@ -60,6 +60,11 @@ DEFAULT_LESSONS = [
     "Quyển 2 - Bài 9: 你见过熊猫吗?", "Quyển 2 - Bài 10: 给您添麻烦了!"
 ]
 
+# Hàm làm sạch chuỗi bài học (xóa mọi dấu câu, khoảng trắng để so sánh 100% chính xác)
+def normalize_lesson_str(title):
+    if not title: return ""
+    return re.sub(r'[^\w\s]', '', str(title)).replace(" ", "").lower()
+
 def fetch_data_from_google(action_name):
     try:
         response = requests.get(
@@ -105,7 +110,7 @@ with st.sidebar.form("config_form"):
     time_per_question = st.slider("⏱️ Thời gian mỗi câu (giây):", min_value=5, max_value=60, value=15)
     start_button = st.form_submit_button("🚀 Bắt đầu kiểm tra", use_container_width=True)
 
-# --- 2. KHU VỰC PHÒNG THI NHÓM (ĐẶT NGOÀI FORM) ---
+# --- 2. PHÒNG THI NHÓM ---
 def get_public_rooms():
     try:
         res = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=1.5).json()
@@ -149,11 +154,11 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
                     st.session_state.room_q_index = 0
                     st.session_state.room_score = 0
                     
-                    # Load dữ liệu thi nhóm
                     if not st.session_state.vocab_data:
                         st.session_state.vocab_data = fetch_data_from_google("get_vocab")
                     
-                    pool = [x for x in st.session_state.vocab_data if isinstance(x, dict) and x.get("lesson") in selected_lessons]
+                    normalized_selected = [normalize_lesson_str(x) for x in selected_lessons]
+                    pool = [x for x in st.session_state.vocab_data if isinstance(x, dict) and normalize_lesson_str(x.get("lesson")) in normalized_selected]
                     if not pool: pool = st.session_state.vocab_data
                     
                     questions_deck = []
@@ -166,15 +171,15 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
                     st.session_state.room_questions = questions_deck
                     st.rerun()
 
-def clean_lesson_title(t):
-    return str(t).strip() if t else ""
-
 def new_question(mode_choice, lessons_choice):
     st.session_state.q_id += 1
     st.session_state.start_time = time.time()
     
-    vocab_pool = [i for i in st.session_state.vocab_data if isinstance(i, dict) and clean_lesson_title(i.get("lesson")) in lessons_choice]
-    sent_pool = [i for i in st.session_state.sentence_data if isinstance(i, dict) and clean_lesson_title(i.get("lesson")) in lessons_choice]
+    # So sánh chuẩn hóa chuỗi
+    normalized_selected = [normalize_lesson_str(x) for x in lessons_choice]
+    
+    vocab_pool = [i for i in st.session_state.vocab_data if isinstance(i, dict) and normalize_lesson_str(i.get("lesson")) in normalized_selected]
+    sent_pool = [i for i in st.session_state.sentence_data if isinstance(i, dict) and normalize_lesson_str(i.get("lesson")) in normalized_selected]
     
     if "Dạng 4" in mode_choice:
         pool = sent_pool if sent_pool else st.session_state.sentence_data
