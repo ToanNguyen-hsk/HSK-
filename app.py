@@ -218,7 +218,6 @@ def update_online_status():
 
 active_users = update_online_status()
 
-# Hiển thị Avatar Online ở Sidebar
 st.sidebar.markdown("### 🟢 Đang Online")
 if active_users:
     avatar_html = "<div class='online-container'>"
@@ -241,14 +240,12 @@ quiz_mode = st.sidebar.radio(
 
 start_button = st.sidebar.button("🚀 Bắt đầu kiểm tra", use_container_width=True)
 
-# Hàm đọc phòng thi công khai xử lý an toàn
-# Hàm đọc danh sách phòng thi chuẩn hóa từ Google Sheets
+# Hàm lấy danh sách phòng thi
 def get_public_rooms():
     try:
         res = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=2.0).json()
         rooms = []
         if isinstance(res, list) and len(res) > 1:
-            # Bỏ qua hàng tiêu đề res[0]
             for row in res[1:]:
                 if isinstance(row, list) and len(row) >= 6:
                     rooms.append({
@@ -284,16 +281,16 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
         try:
             requests.get(GOOGLE_SHEET_URL, params=params, timeout=2.0)
             st.success("🎉 Tạo phòng thành công!")
-            time.sleep(0.5) # Chờ Google Sheets ghi nhận
-            st.rerun() # Tải lại trang để danh sách phòng xuất hiện ngay
+            time.sleep(0.5)
+            st.rerun()
         except Exception:
-            st.info("Đã gửi yêu cầu tạo phòng!")
+            st.info("Đã gửi tạo phòng!")
 
     st.write("---")
     st.markdown("**Danh Sách Phòng Hiện Có:**")
     rooms_list = get_public_rooms()
     if not rooms_list:
-        st.caption("Chưa có phòng nào. Hãy nhấn 'Tạo Phòng Thi' ở trên!")
+        st.caption("Chưa có phòng nào. Nhấn 'Tạo Phòng Thi' ở trên!")
     else:
         for idx, rm in enumerate(rooms_list):
             r_id = rm["roomId"]
