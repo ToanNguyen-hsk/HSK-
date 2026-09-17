@@ -8,7 +8,7 @@ import streamlit.components.v1 as components
 # 1. Cấu hình trang web
 st.set_page_config(page_title="App Ôn Tập Từ Vựng HSK - MSUTONG 1 & 2", layout="centered")
 
-# Dán URL Apps Script chuẩn của bạn vào đây
+# URL Apps Script cá nhân của bạn
 GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxcnKRCCcd-iIkzspRGjS4jnwdCU3A25FwAVCBWlmJHMKT2le5kYd22O3i-V-fv3c0V/exec"
 
 st.markdown("""
@@ -42,7 +42,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Hàm phát âm JS chạy ngay lập tức không gây trễ ứng dụng
+# Hàm phát âm JS tức thì
 def play_audio_js(text):
     if not text:
         return
@@ -67,6 +67,7 @@ def play_audio_js(text):
 
 # Danh mục Tên 20 bài học chuẩn MSUTONG
 LESSON_NAMES = {
+    # Quyển 1
     "Q1_1": "Quyển 1 - Bài 1: 你好 (Nǐ hǎo)",
     "Q1_2": "Quyển 1 - Bài 2: 你叫什么名字? (Nǐ jiào shénme míngzi?)",
     "Q1_3": "Quyển 1 - Bài 3: 很高兴认识你 (Hěn gāoxìng rènshi nǐ)",
@@ -77,6 +78,8 @@ LESSON_NAMES = {
     "Q1_8": "Quyển 1 - Bài 8: 你的生日是几月几号? (Nǐ de shēngrì shì jǐ yuè jǐ hào?)",
     "Q1_9": "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影? (Nǐ xǐhuan Zhōngguó diànyǐng háishi Měiguó diànyǐng?)",
     "Q1_10": "Quyển 1 - Bài 10: 你家有几口人? (Nǐ jiā yǒu jǐ kǒu rén?)",
+    
+    # Quyển 2
     "Q2_1": "Quyển 2 - Bài 1: 你在听什么? (Nǐ zài tīng shénme?)",
     "Q2_2": "Quyển 2 - Bài 2: 你平时几点起床? (Nǐ píngshí jǐ diǎn qǐchuáng?)",
     "Q2_3": "Quyển 2 - Bài 3: 可以用一下你的手机吗? (Kěyǐ yòng yíxià nǐ de shǒujī ma?)",
@@ -89,7 +92,7 @@ LESSON_NAMES = {
     "Q2_10": "Quyển 2 - Bài 10: 给您添麻烦了! (Gěi nín tiān máfan le!)"
 }
 
-# FULL TỪ VỰNG CHÍNH VÀ TỪ BỔ SUNG (CỐ ĐỊNH)
+# FULL TỪ VỰNG CHÍNH VÀ TỪ BỔ SUNG (CỐ ĐỊNH 100%)
 VOCAB_DATA = [
     # QUYỂN 1: BÀI 1
     {"char": "你好", "pinyin": "nǐ hǎo", "meaning": "xin chào", "lesson": LESSON_NAMES["Q1_1"]},
