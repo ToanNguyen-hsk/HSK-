@@ -24,10 +24,6 @@ st.markdown("""
         display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px;
         border: 2px solid #4CAF50;
     }
-    .timer-box {
-        font-size: 20px; font-weight: bold; color: #D32F2F; text-align: center;
-        background-color: #FFEBEE; padding: 8px; border-radius: 8px; margin-bottom: 15px;
-    }
     div[data-testid="stRadio"] > div { gap: 15px; }
     </style>
 """, unsafe_allow_html=True)
@@ -51,8 +47,47 @@ def play_audio_js(text):
     """
     components.html(js_code, height=0, width=0)
 
+# Đồng hồ đếm ngược JavaScript chạy trên trình duyệt (không gây giật lag)
+def render_js_timer(seconds, key_id):
+    js_timer_code = f"""
+    <div id="timer-box-{key_id}" style="
+        font-size: 20px; 
+        font-weight: bold; 
+        color: #D32F2F; 
+        text-align: center;
+        background-color: #FFEBEE; 
+        padding: 8px 12px; 
+        border-radius: 8px; 
+        border: 1px solid #FFCDD2;
+        font-family: sans-serif;
+        margin-bottom: 10px;">
+        ⏱️ Thời gian còn lại: <span id="count-{key_id}">{seconds}</span> giây
+    </div>
+    <script>
+        (function() {{
+            var timeLeft = {seconds};
+            var elem = document.getElementById('count-{key_id}');
+            var box = document.getElementById('timer-box-{key_id}');
+            if (!elem || !box) return;
+            var timerId = setInterval(function() {{
+                timeLeft--;
+                if (timeLeft <= 0) {{
+                    clearInterval(timerId);
+                    elem.innerHTML = "0";
+                    box.style.backgroundColor = "#FFE0B2";
+                    box.style.color = "#E65100";
+                    box.innerHTML = "⏰ Đã hết thời gian làm câu này! Đang xem đáp án bên dưới.";
+                }} else {{
+                    elem.innerHTML = timeLeft;
+                }}
+            }}, 1000);
+        }})();
+    </script>
+    """
+    components.html(js_timer_code, height=55)
+
 # ==========================================
-# 📥 KHO DỮ LIỆU ĐẦY ĐỦ 100% TỪ GOOGLE SHEET
+# 📥 KHO DỮ LIỆU ĐẦY ĐỦ 100% (465 VOCAB & 129 SENTENCES)
 # ==========================================
 FULL_VOCAB = [
     # Quyển 1 - Bài 1
@@ -425,7 +460,7 @@ FULL_VOCAB = [
     {"char": "号", "pinyin": "hào", "meaning": "cỡ, kích cỡ (size)", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
     {"char": "觉得", "pinyin": "juéde", "meaning": "cảm thấy", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
     {"char": "合适", "pinyin": "héshì", "meaning": "hợp, phù hợp", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
-    {"char": "不太", "pinyin": "bú tài", "meaning": "không quá...", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
+    {"char": "不太", "pinyin": "bú tài", "meaning": "không quá, không... lắm", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
     {"char": "双", "pinyin": "shuāng", "meaning": "đôi", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
     {"char": "鞋", "pinyin": "xié", "meaning": "giày", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
     {"char": "贵", "pinyin": "guì", "meaning": "đắt", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
@@ -562,6 +597,7 @@ FULL_VOCAB = [
 ]
 
 FULL_SENTENCES = [
+    # Quyển 1 - Bài 1 (9 câu)
     {"sentence": "你好！", "meaning": "Xin chào!", "lesson": "Quyển 1 - Bài 1: 你好"},
     {"sentence": "您好！", "meaning": "Chào ngài / Chào ông / Chào bà!", "lesson": "Quyển 1 - Bài 1: 你好"},
     {"sentence": "你们好！", "meaning": "Chào các bạn!", "lesson": "Quyển 1 - Bài 1: 你好"},
@@ -571,6 +607,8 @@ FULL_SENTENCES = [
     {"sentence": "谢谢你！", "meaning": "Cảm ơn bạn!", "lesson": "Quyển 1 - Bài 1: 你好"},
     {"sentence": "不客气！", "meaning": "Không có gì!", "lesson": "Quyển 1 - Bài 1: 你好"},
     {"sentence": "再见！", "meaning": "Tạm biệt!", "lesson": "Quyển 1 - Bài 1: 你好"},
+
+    # Quyển 1 - Bài 2 (7 câu)
     {"sentence": "你叫什么名字？", "meaning": "Bạn tên là gì?", "lesson": "Quyển 1 - Bài 2: 你叫什么名字?"},
     {"sentence": "我叫大卫，你呢？", "meaning": "Tôi tên là David, còn bạn?", "lesson": "Quyển 1 - Bài 2: 你叫什么名字?"},
     {"sentence": "我是中国人。", "meaning": "Tôi là người Trung Quốc.", "lesson": "Quyển 1 - Bài 2: 你叫什么名字?"},
@@ -578,6 +616,8 @@ FULL_SENTENCES = [
     {"sentence": "我是美国人。", "meaning": "Tôi là người Mỹ.", "lesson": "Quyển 1 - Bài 2: 你叫什么名字?"},
     {"sentence": "她也是留学生。", "meaning": "Cô ấy cũng là lưu học sinh.", "lesson": "Quyển 1 - Bài 2: 你叫什么名字?"},
     {"sentence": "高小明是哪国人？", "meaning": "Cao Tiểu Minh là người nước nào?", "lesson": "Quyển 1 - Bài 2: 你叫什么名字?"},
+
+    # Quyển 1 - Bài 3 (7 câu)
     {"sentence": "请问，您贵姓？", "meaning": "Xin hỏi, ngài họ gì?", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
     {"sentence": "我姓马，叫马云。", "meaning": "Tôi họ Mã, tên là Mã Vân.", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
     {"sentence": "这是我的名片。", "meaning": "Đây là danh thiếp của tôi.", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
@@ -585,6 +625,8 @@ FULL_SENTENCES = [
     {"sentence": "我也很高兴认识你。", "meaning": "Tôi cũng rất vui được quen biết bạn.", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
     {"sentence": "对不起，我没有名片。", "meaning": "Xin lỗi, tôi không có danh thiếp.", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
     {"sentence": "没关系，认识你很高兴。", "meaning": "Không sao, quen biết bạn tôi rất vui.", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+
+    # Quyển 1 - Bài 4 (8 câu)
     {"sentence": "师傅，你去哪儿？", "meaning": "Bác tài, bác đi đâu đấy?", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
     {"sentence": "我去人民广场。", "meaning": "Tôi đi quảng trường Nhân dân.", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
     {"sentence": "去人民广场多少钱？", "meaning": "Đi quảng trường Nhân dân bao nhiêu tiền?", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
@@ -593,6 +635,8 @@ FULL_SENTENCES = [
     {"sentence": "飞机场很远，坐地铁吧。", "meaning": "Sân bay rất xa, đi tàu điện ngầm nhé.", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
     {"sentence": "谢谢师傅，再见！", "meaning": "Cảm ơn bác tài, tạm biệt!", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
     {"sentence": "不客气，慢走！", "meaning": "Không có gì, đi thong thả!", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
+
+    # Quyển 1 - Bài 5 (7 câu)
     {"sentence": "你要吃什么？", "meaning": "Bạn muốn ăn gì?", "lesson": "Quyển 1 - Bài 5: 你要吃什么?"},
     {"sentence": "我要吃牛肉和青菜。", "meaning": "Tôi muốn ăn thịt bò và rau xanh.", "lesson": "Quyển 1 - Bài 5: 你要吃什么?"},
     {"sentence": "还需要什么吗？", "meaning": "Còn cần thêm gì nữa không?", "lesson": "Quyển 1 - Bài 5: 你要吃什么?"},
@@ -600,79 +644,127 @@ FULL_SENTENCES = [
     {"sentence": "请快一点儿，我很饿。", "meaning": "Xin hãy nhanh một chút, tôi rất đói.", "lesson": "Quyển 1 - Bài 5: 你要吃什么?"},
     {"sentence": "北京烤鸭很好吃。", "meaning": "Vịt quay Bắc Kinh rất ngon.", "lesson": "Quyển 1 - Bài 5: 你要吃什么?"},
     {"sentence": "麻婆豆腐有点儿辣。", "meaning": "Đậu phụ Tứ Xuyên hơi cay một chút.", "lesson": "Quyển 1 - Bài 5: 你要吃什么?"},
+
+    # Quyển 1 - Bài 6 (6 câu)
     {"sentence": "你在哪儿工作？", "meaning": "Bạn làm việc ở đâu?", "lesson": "Quyển 1 - Bài 6: 你在哪儿工作?"},
     {"sentence": "我在苹果公司工作。", "meaning": "Tôi làm việc ở công ty Apple.", "lesson": "Quyển 1 - Bài 6: 你在哪儿工作?"},
     {"sentence": "你在这儿学习汉语吗？", "meaning": "Bạn học tiếng Hán ở đây à?", "lesson": "Quyển 1 - Bài 6: 你在哪儿工作?"},
-    {"sentence": "对，我是北京大学的留学生。", "meaning": "Đúng vậy, tôi là lưu học sinh.", "lesson": "Quyển 1 - Bài 6: 你在哪儿工作?"},
+    {"sentence": "对，我是北京大学的留学生。", "meaning": "Đúng vậy, tôi là lưu học sinh trường Đại học Bắc Kinh.", "lesson": "Quyển 1 - Bài 6: 你在哪儿工作?"},
     {"sentence": "你女朋友做什么工作？", "meaning": "Bạn gái của bạn làm công việc gì?", "lesson": "Quyển 1 - Bài 6: 你在哪儿工作?"},
     {"sentence": "她在中学教英语。", "meaning": "Cô ấy dạy tiếng Anh ở trường trung học.", "lesson": "Quyển 1 - Bài 6: 你在哪儿工作?"},
+
+    # Quyển 1 - Bài 7 (5 câu)
     {"sentence": "中国银行在哪儿？", "meaning": "Ngân hàng Trung Quốc ở đâu?", "lesson": "Quyển 1 - Bài 7: 中国银行在哪儿?"},
     {"sentence": "附近有银行吗？", "meaning": "Gần đây có ngân hàng không?", "lesson": "Quyển 1 - Bài 7: 中国银行在哪儿?"},
-    {"sentence": "从这儿往前走，然后往左拐。", "meaning": "Đi thẳng, sau đó rẽ trái.", "lesson": "Quyển 1 - Bài 7: 中国银行在哪儿?"},
-    {"sentence": "四川饭店就在超市对面。", "meaning": "Nhà hàng đối diện siêu thị.", "lesson": "Quyển 1 - Bài 7: 中国银行在哪儿?"},
+    {"sentence": "从这儿往前走，然后往左拐。", "meaning": "Từ đây đi thẳng về phía trước, sau đó rẽ trái.", "lesson": "Quyển 1 - Bài 7: 中国银行在哪儿?"},
+    {"sentence": "四川饭店就在超市对面。", "meaning": "Nhà hàng Tứ Xuyên nằm ngay đối diện siêu thị.", "lesson": "Quyển 1 - Bài 7: 中国银行在哪儿?"},
     {"sentence": "往右拐就是书店。", "meaning": "Rẽ phải chính là nhà sách.", "lesson": "Quyển 1 - Bài 7: 中国银行在哪儿?"},
+
+    # Quyển 1 - Bài 8 (7 câu)
     {"sentence": "你的生日是几月几号？", "meaning": "Sinh nhật bạn là ngày mấy tháng mấy?", "lesson": "Quyển 1 - Bài 8: 你的生日是几月几号?"},
     {"sentence": "我的生日是十月五号。", "meaning": "Sinh nhật tôi là ngày 5 tháng 10.", "lesson": "Quyển 1 - Bài 8: 你的生日是几月几号?"},
-    {"sentence": "星期五晚上你有空儿吗？", "meaning": "Tối thứ sáu bạn có rảnh không?", "lesson": "Quyển 1 - Bài 8: 你的生日是几月几号?"},
+    {"sentence": "星期五晚上你有空儿吗？", "meaning": "Tối thứ sáu bạn có thời gian rảnh không?", "lesson": "Quyển 1 - Bài 8: 你的生日是几月几号?"},
     {"sentence": "我想请你吃晚饭。", "meaning": "Tôi muốn mời bạn ăn bữa tối.", "lesson": "Quyển 1 - Bài 8: 你的生日是几月几号?"},
+    {"sentence": "太好了！我们在哪儿见？", "meaning": "Tốt quá! Chúng ta gặp nhau ở đâu?", "lesson": "Quyển 1 - Bài 8: 你的生日是几月几号?"},
     {"sentence": "晚上七点在学校门口见。", "meaning": "7 giờ tối gặp nhau ở cổng trường.", "lesson": "Quyển 1 - Bài 8: 你的生日是几月几号?"},
     {"sentence": "祝你生日快乐！", "meaning": "Chúc bạn sinh nhật vui vẻ!", "lesson": "Quyển 1 - Bài 8: 你的生日是几月几号?"},
-    {"sentence": "你喜欢中国电影还是美国电影？", "meaning": "Bạn thích phim Trung Quốc hay Mỹ?", "lesson": "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影?"},
+
+    # Quyển 1 - Bài 9 (6 câu)
+    {"sentence": "你喜欢中国电影还是美国电影？", "meaning": "Bạn thích phim Trung Quốc hay phim Mỹ?", "lesson": "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影?"},
     {"sentence": "我都非常喜欢。", "meaning": "Tôi đều cực kỳ thích.", "lesson": "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影?"},
-    {"sentence": "明天我们怎么去电影院？", "meaning": "Ngày mai chúng ta đi bằng cách nào?", "lesson": "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影?"},
-    {"sentence": "坐地铁吧，坐地铁又快又便宜。", "meaning": "Đi tàu điện ngầm vừa nhanh vừa rẻ.", "lesson": "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影?"},
-    {"sentence": "那里的菜非常有名，很好吃。", "meaning": "Món ăn ở đó rất nổi tiếng.", "lesson": "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影?"},
+    {"sentence": "明天我们怎么去电影院？", "meaning": "Ngày mai chúng ta đi đến rạp chiếu phim bằng cách nào?", "lesson": "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影?"},
+    {"sentence": "坐地铁吧，坐地铁又快又便宜。", "meaning": "Đi tàu điện ngầm đi, đi tàu điện ngầm vừa nhanh vừa rẻ.", "lesson": "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影?"},
+    {"sentence": "那里的四川菜怎么样？", "meaning": "Món ăn Tứ Xuyên ở đó như thế nào?", "lesson": "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影?"},
+    {"sentence": "那里的菜非常有名，很好吃。", "meaning": "Món ăn ở đó vô cùng nổi tiếng, rất ngon.", "lesson": "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影?"},
+
+    # Quyển 1 - Bài 10 (7 câu)
     {"sentence": "你家有几口人？", "meaning": "Nhà bạn có mấy người?", "lesson": "Quyển 1 - Bài 10: 你家有几口人?"},
-    {"sentence": "我家有五口人：爸爸、妈妈、哥哥、妹妹和我。", "meaning": "Nhà tôi có 5 người.", "lesson": "Quyển 1 - Bài 10: 你家有几口人?"},
+    {"sentence": "我家有五口人：爸爸、妈妈、哥哥、妹妹和我。", "meaning": "Nhà tôi có 5 người: bố, mẹ, anh trai, em gái và tôi.", "lesson": "Quyển 1 - Bài 10: 你家有几口人?"},
     {"sentence": "照片上的这个人是谁？", "meaning": "Người trong bức ảnh này là ai?", "lesson": "Quyển 1 - Bài 10: 你家有几口人?"},
-    {"sentence": "这是我姐姐，她是律师。", "meaning": "Đây là chị gái tôi.", "lesson": "Quyển 1 - Bài 10: 你家有几口人?"},
+    {"sentence": "这是我姐姐，她是律师。", "meaning": "Đây là chị gái tôi, chị ấy là luật sư.", "lesson": "Quyển 1 - Bài 10: 你家有几口人?"},
     {"sentence": "你哥哥今年多大？", "meaning": "Anh trai bạn năm nay bao nhiêu tuổi?", "lesson": "Quyển 1 - Bài 10: 你家有几口人?"},
-    {"sentence": "他今年二十五岁，是医生。", "meaning": "Anh ấy năm nay 25 tuổi.", "lesson": "Quyển 1 - Bài 10: 你家有几口人?"},
-    {"sentence": "你家的狗真可爱！", "meaning": "Con chó nhà bạn thật đáng yêu!", "lesson": "Quyển 1 - Bài 10: 你家有几口人?"},
+    {"sentence": "他今年二十五岁，是医生。", "meaning": "Anh ấy năm nay 25 tuổi, là bác sĩ.", "lesson": "Quyển 1 - Bài 10: 你家有几口人?"},
+    {"sentence": "你家的狗真可爱！", "meaning": "Con chó nhà bạn thật là đáng yêu!", "lesson": "Quyển 1 - Bài 10: 你家有几口人?"},
+
+    # Quyển 2 - Bài 1 (5 câu)
     {"sentence": "你在听什么音乐？", "meaning": "Bạn đang nghe nhạc gì thế?", "lesson": "Quyển 2 - Bài 1: 你在听什么?"},
-    {"sentence": "我正在听中文歌，非常好听。", "meaning": "Tôi đang nghe bài hát tiếng Trung.", "lesson": "Quyển 2 - Bài 1: 你在听什么?"},
-    {"sentence": "你喜欢一边听歌一边写作业吗？", "meaning": "Bạn có thích vừa nghe nhạc vừa làm bài không?", "lesson": "Quyển 2 - Bài 1: 你在听什么?"},
-    {"sentence": "我平时喜欢打篮球和跳舞。", "meaning": "Tôi thích chơi bóng rổ và nhảy múa.", "lesson": "Quyển 2 - Bài 1: 你在听什么?"},
-    {"sentence": "下个周末我们一起去打球，行吗？", "meaning": "Cuối tuần sau cùng đi đánh bóng nhé?", "lesson": "Quyển 2 - Bài 1: 你在听什么?"},
+    {"sentence": "我正在听中文歌，非常好听。", "meaning": "Tôi đang nghe bài hát tiếng Trung, rất là hay.", "lesson": "Quyển 2 - Bài 1: 你在听什么?"},
+    {"sentence": "你喜欢一边听歌一边写作业吗？", "meaning": "Bạn có thích vừa nghe nhạc vừa làm bài tập không?", "lesson": "Quyển 2 - Bài 1: 你在听什么?"},
+    {"sentence": "我平时喜欢打篮球和跳舞。", "meaning": "Thường ngày tôi thích chơi bóng rổ và nhảy múa.", "lesson": "Quyển 2 - Bài 1: 你在听什么?"},
+    {"sentence": "下个周末我们一起去打球，行吗？", "meaning": "Cuối tuần sau chúng ta cùng nhau đi đánh bóng, được không?", "lesson": "Quyển 2 - Bài 1: 你在听什么?"},
+
+    # Quyển 2 - Bài 2 (7 câu)
     {"sentence": "现在几点了？", "meaning": "Bây giờ là mấy giờ rồi?", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
-    {"sentence": "现在八点半，快上课了。", "meaning": "Bây giờ là 8 rưỡi, sắp vào học rồi.", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
+    {"sentence": "现在八点半，快上课了。", "meaning": "Bây giờ là 8 giờ rưỡi, sắp vào học rồi.", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"sentence": "你平时几点起床？", "meaning": "Bình thường mấy giờ bạn thức dậy?", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
-    {"sentence": "我每天早上六点一刻起床。", "meaning": "Tôi thức dậy lúc 6:15 sáng.", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
-    {"sentence": "เพราะ我昨天晚上很早就睡觉了。", "meaning": "Bởi vì tối qua tôi ngủ rất sớm.", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
-    {"sentence": "可以用一下你的手机吗？", "meaning": "Có thể dùng điện thoại của bạn không?", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
-    {"sentence": "我想给妈妈打个电话。", "meaning": "Tôi muốn gọi điện thoại cho mẹ.", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
-    {"sentence": "可是我不记得她的电话号码了。", "meaning": "Nhưng tôi không nhớ số điện thoại.", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
-    {"sentence": "请你说慢一点儿，再说一遍。", "meaning": "Xin hãy nói chậm lại một chút.", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
+    {"sentence": "我每天早上六点一刻起床。", "meaning": "Hàng ngày tôi thức dậy lúc 6 giờ 15 phút sáng.", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
+    {"sentence": "你今天怎么这么早？", "meaning": "Hôm nay sao bạn lại đến sớm thế này?", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
+    {"sentence": "因为我昨天晚上很早就睡觉了。", "meaning": "Bởi vì tối qua tôi đã đi ngủ từ rất sớm.", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
+    {"sentence": "我们中午在学校门口见。", "meaning": "Buổi trưa chúng ta gặp nhau ở cổng trường.", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
+
+    # Quyển 2 - Bài 3 (6 câu)
+    {"sentence": "可以用一下你的手机吗？", "meaning": "Có thể dùng điện thoại của bạn một chút không?", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
+    {"sentence": "我想给妈妈打个电话。", "meaning": "Tôi muốn gọi một cuộc điện thoại cho mẹ.", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
+    {"sentence": "可是我不记得她的电话号码了。", "meaning": "Nhưng tôi không nhớ số điện thoại của bà ấy rồi.", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
+    {"sentence": "你有笔吗？借我用一下。", "meaning": "Bạn có bút không? Cho tôi mượn một chút.", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
+    {"sentence": "请你说慢一点儿，再说一遍。", "meaning": "Xin hãy nói chậm lại một chút, nói lại một lần nữa.", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
     {"sentence": "没问题，给你！", "meaning": "Không vấn đề gì, đưa cho bạn này!", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
+
+    # Quyển 2 - Bài 4 (6 câu)
     {"sentence": "你想买什么衣服？", "meaning": "Bạn muốn mua quần áo gì?", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
-    {"sentence": "我想试一下这件蓝色的衬衫。", "meaning": "Tôi muốn thử chiếc áo sơ mi màu xanh.", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
+    {"sentence": "我想试一下这件蓝色的衬衫。", "meaning": "Tôi muốn thử một chút chiếc áo sơ mi màu xanh da trời này.", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
     {"sentence": "你穿多大号的？", "meaning": "Bạn mặc cỡ size bao nhiêu?", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
-    {"sentence": "我觉得这件大号的很合适。", "meaning": "Tôi thấy chiếc size lớn rất phù hợp.", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
+    {"sentence": "我觉得这件大号的很合适。", "meaning": "Tôi cảm thấy chiếc size lớn này rất phù hợp.", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
+    {"sentence": "这双鞋有点儿贵，不太便宜。", "meaning": "Đôi giày này hơi đắt một chút, không rẻ lắm.", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
     {"sentence": "大小怎么样？不错！", "meaning": "Kích cỡ như thế nào? Rất tốt!", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
+
+    # Quyển 2 - Bài 5 (5 câu)
     {"sentence": "喂，请问是大卫吗？", "meaning": "Alo, xin hỏi có phải David đấy không?", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"sentence": "我最近有点儿忙，要准备考试。", "meaning": "Dạo này tôi bận chuẩn bị thi.", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"sentence": "你什么时候有空儿帮我复习？", "meaning": "Khi nào bạn rảnh giúp tôi ôn tập?", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"sentence": "星期六上午我要去参加比赛。", "meaning": "Sáng thứ 7 tôi phải tham gia cuộc thi.", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
+    {"sentence": "我最近有点儿忙，要准备HSK考试。", "meaning": "Dạo này tôi hơi bận một chút, phải chuẩn bị thi HSK.", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
+    {"sentence": "你什么时候有空儿帮我复习？", "meaning": "Khi nào bạn có thời gian rảnh giúp tôi ôn tập?", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
+    {"sentence": "星期六上午我要去图书馆参加比赛。", "meaning": "Sáng thứ 7 tôi phải đi thư viện tham gia cuộc thi.", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
+    {"sentence": "不好意思，今天下午我有事。", "meaning": "Xin lỗi, chiều hôm nay tôi có chút việc.", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
+
+    # Quyển 2 - Bài 6 (6 câu)
     {"sentence": "上个周末你做什么了？", "meaning": "Cuối tuần trước bạn đã làm gì?", "lesson": "Quyển 2 - Bài 6: 上个周末你做什么了?"},
-    {"sentence": "我和朋友去参观了博物馆。", "meaning": "Tôi và bạn bè tham quan bảo tàng.", "lesson": "Quyển 2 - Bài 6: 上个周末你做什么了?"},
+    {"sentence": "我和朋友去参观了博物馆。", "meaning": "Tôi và bạn bè đã đi tham quan bảo tàng.", "lesson": "Quyển 2 - Bài 6: 上个周末你做什么了?"},
+    {"sentence": "公园里的风景非常美。", "meaning": "Phong cảnh trong công viên vô cùng đẹp.", "lesson": "Quyển 2 - Bài 6: 上个周末你做什么了?"},
     {"sentence": "你看上去有点儿累。", "meaning": "Nhìn bạn có vẻ hơi mệt mỏi.", "lesson": "Quyển 2 - Bài 6: 上个周末你做什么了?"},
-    {"sentence": "我在那里拍了很多照片。", "meaning": "Tôi đã chụp rất nhiều ảnh.", "lesson": "Quyển 2 - Bài 6: 上个周末你做什么了?"},
-    {"sentence": "你是在微信上告诉我的吗？", "meaning": "Bạn đã nhắn trên WeChat à?", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
+    {"sentence": "我在那里拍了很多照片。", "meaning": "Tôi đã chụp rất nhiều ảnh ở nơi đó.", "lesson": "Quyển 2 - Bài 6: 上个周末你做什么了?"},
+    {"sentence": "真希望下次还能去！", "meaning": "Thật hy vọng lần sau còn có thể đi tiếp!", "lesson": "Quyển 2 - Bài 6: 上个周末你做什么了?"},
+
+    # Quyển 2 - Bài 7 (6 câu)
+    {"sentence": "你是在微信上告诉我的吗？", "meaning": "Có phải bạn đã nói với tôi trên WeChat không?", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
     {"sentence": "我忘记了，不好意思。", "meaning": "Tôi quên mất rồi, xin lỗi nhé.", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
-    {"sentence": "你是跟谁 festival一起去骑自行车的？", "meaning": "Bạn đã đi đạp xe cùng ai?", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
+    {"sentence": "你是跟谁 festival一起去骑自行车的？", "meaning": "Bạn đã đi đạp xe cùng với ai thế?", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
+    {"sentence": "我们骑了两个多小时。", "meaning": "Chúng tôi đã đạp xe hơn 2 tiếng đồng hồ.", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
     {"sentence": "这张照片是你自己拍的吗？", "meaning": "Bức ảnh này là tự tay bạn chụp à?", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
+    {"sentence": "我是去年去法国旅行的。", "meaning": "Tôi đi du lịch Pháp vào năm ngoái.", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
+
+    # Quyển 2 - Bài 8 (6 câu)
     {"sentence": "你会做中国菜吗？", "meaning": "Bạn biết nấu món ăn Trung Quốc không?", "lesson": "Quyển 2 - Bài 8: 你会做菜吗?"},
-    {"sentence": "我不太会做菜。", "meaning": "Tôi không biết nấu ăn lắm.", "lesson": "Quyển 2 - Bài 8: 你会做菜吗?"},
-    {"sentence": "请尝一下我做的菜，怎么样？", "meaning": "Xin hãy nếm thử món ăn tôi làm.", "lesson": "Quyển 2 - Bài 8: 你会做菜吗?"},
-    {"sentence": "你见过真正的熊猫吗？", "meaning": "Bạn từng nhìn thấy gấu trúc chưa?", "lesson": "Quyển 2 - Bài 9: 你见过熊猫吗?"},
-    {"sentence": "我只看过电影功夫熊猫。", "meaning": "Tôi chỉ mới xem phim Kungfu Panda.", "lesson": "Quyển 2 - Bài 9: 你见过熊猫吗?"},
-    {"sentence": "如果你对熊猫感兴趣的话。", "meaning": "Nếu bạn hứng thú với gấu trúc.", "lesson": "Quyển 2 - Bài 9: 你见过熊猫吗?"},
-    {"sentence": "市中心的烤鸭味道好极了！", "meaning": "Vịt quay ở trung tâm ngon cực kỳ!", "lesson": "Quyển 2 - Bài 9: 你见过熊猫吗?"},
+    {"sentence": "我不太会做菜，但我会做水果沙拉。", "meaning": "Tôi không biết nấu ăn lắm, nhưng tôi biết làm sa-lát hoa quả.", "lesson": "Quyển 2 - Bài 8: 你会做菜吗?"},
+    {"sentence": "请尝一下我做的菜，怎么样？", "meaning": "Xin hãy nếm thử món ăn tôi làm, thế nào?", "lesson": "Quyển 2 - Bài 8: 你会做菜吗?"},
+    {"sentence": "哪里哪里，你太客气了。", "meaning": "Đâu có đâu có, bạn quá khách sáo rồi.", "lesson": "Quyển 2 - Bài 8: 你会做菜吗?"},
+    {"sentence": "除了英语以外，你还会说别的外语吗？", "meaning": "Ngoài tiếng Anh ra, bạn còn biết nói ngoại ngữ khác không?", "lesson": "Quyển 2 - Bài 8: 你会做菜吗?"},
+    {"sentence": "我还学会了一点儿法语和日语。", "meaning": "Tôi còn học được một chút tiếng Pháp và tiếng Nhật.", "lesson": "Quyển 2 - Bài 8: 你会做菜吗?"},
+
+    # Quyển 2 - Bài 9 (6 câu)
+    {"sentence": "你见过真正的熊猫吗？", "meaning": "Bạn từng nhìn thấy gấu trúc thật sự chưa?", "lesson": "Quyển 2 - Bài 9: 你见过熊猫吗?"},
+    {"sentence": "我只看过电影《功夫熊猫》。", "meaning": "Tôi chỉ mới xem bộ phim 'Kungfu Panda' thôi.", "lesson": "Quyển 2 - Bài 9: 你见过熊猫吗?"},
+    {"sentence": "郊区的动物园里有很多动物。", "meaning": "Trong sở thú ở ngoại thành có rất nhiều động vật.", "lesson": "Quyển 2 - Bài 9: 你见过熊猫吗?"},
+    {"sentence": "如果你对熊猫感兴趣的话，我们明天一起去吧。", "meaning": "Nếu như bạn hứng thú với gấu trúc, ngày mai chúng ta cùng đi nhé.", "lesson": "Quyển 2 - Bài 9: 你见过熊猫吗?"},
+    {"sentence": "真遗憾，我明天有个约会。", "meaning": "Thật tiếc, ngày mai tôi có một buổi hẹn hò.", "lesson": "Quyển 2 - Bài 9: 你见过熊猫吗?"},
+    {"sentence": "市中心的烤鸭味道好极了！", "meaning": "Vịt quay ở trung tâm thành phố hương vị ngon cực kỳ!", "lesson": "Quyển 2 - Bài 9: 你见过熊猫吗?"},
+
+    # Quyển 2 - Bài 10 (7 câu)
     {"sentence": "欢迎来到我家做客！", "meaning": "Chào mừng đến nhà tôi làm khách!", "lesson": "Quyển 2 - Bài 10: 给您添麻烦了!"},
     {"sentence": "给您添麻烦了！", "meaning": "Đã làm phiền ngài rồi!", "lesson": "Quyển 2 - Bài 10: 给您添麻烦了!"},
     {"sentence": "别客气，快请进！", "meaning": "Đừng khách sáo, mau mời vào!", "lesson": "Quyển 2 - Bài 10: 给您添麻烦了!"},
+    {"sentence": "我爱人和孩子们都出去了。", "meaning": "Vợ và các con tôi đều ra ngoài rồi.", "lesson": "Quyển 2 - Bài 10: 给您添麻烦了!"},
     {"sentence": "阿姨，您做饭辛苦了！", "meaning": "Cô ơi, cô nấu cơm vất vả rồi!", "lesson": "Quyển 2 - Bài 10: 给您添麻烦了!"},
-    {"sentence": "你怕不怕辣？我不怕辣。", "meaning": "Bạn có sợ cay không? Tôi không sợ.", "lesson": "Quyển 2 - Bài 10: 给您添麻烦了!"}
+    {"sentence": "你怕不怕辣？我不怕辣。", "meaning": "Bạn có sợ cay không? Tôi không sợ cay.", "lesson": "Quyển 2 - Bài 10: 给您添麻烦了!"},
+    {"sentence": "这个糖醋鱼酸酸甜甜的，很好吃。", "meaning": "Món cá sốt chua ngọt này chua chua ngọt ngọt, rất ngon.", "lesson": "Quyển 2 - Bài 10: 给您添麻烦了!"}
 ]
 
 DYNAMIC_LESSONS = [
@@ -886,14 +978,29 @@ elif st.session_state.get("question"):
     timer_limit = st.session_state.get("active_timer", 15)
     remaining = max(0, int(timer_limit - elapsed))
     
-    st.markdown(f"<div class='timer-box'>⏱️ Thời gian còn lại: {remaining} giây</div>", unsafe_allow_html=True)
-    
+    # HẾT GIỜ: TỰ ĐỘNG THÔNG BÁO VÀ SHOW ĐÁP ÁN ĐÚNG
     if remaining <= 0:
         st.error("⏰ Hết thời gian làm câu này!")
+        
+        # HIỂN THỊ ĐÁP ÁN CHUẨN KHI HẾT GIỜ
+        if q.get("mode") == 4:
+            st.warning(f"💡 Đáp án đúng là: **{q['full_target']}** (*{q.get('meaning', '')}*)")
+            play_audio_js(q['full_target'])
+        else:
+            meaning_info = f" - *{q['target'].get('meaning', '')}*" if q['target'].get('meaning') else ""
+            st.warning(f"💡 Đáp án đúng là: **{q['correct_ans']}**{meaning_info}")
+            if q['target'].get('char'):
+                play_audio_js(q['target']['char'])
+                
         if st.button("Sang câu tiếp theo ➡️"):
             new_question(st.session_state.active_mode, st.session_state.active_lessons)
             st.rerun()
+            
+    # CÒN THỜI GIAN: HIỂN THỊ ĐỒNG HỒ CLIENT-SIDE & CHO PHÉP LÀM BÀI
     else:
+        render_js_timer(remaining, st.session_state.q_id)
+        
+        # DẠNG 4: GHÉP CÂU
         if q.get("mode") == 4:
             st.subheader("🧩 Bài Tập Ghép Câu Hội Thoại")
             st.markdown(f"### 💡 **Ý nghĩa:** `{q['meaning']}`")
@@ -922,6 +1029,7 @@ elif st.session_state.get("question"):
                     new_question(st.session_state.active_mode, st.session_state.active_lessons)
                     st.rerun()
 
+        # DẠNG 1, 2, 3: TRẮC NGHIỆM TỰ ĐỘNG CHẤM KHI TÍCH CHỌN
         else:
             if q["mode"] == 1:
                 st.markdown(f"<h1 style='text-align: center; font-size: 100px; color: #1E88E5;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
