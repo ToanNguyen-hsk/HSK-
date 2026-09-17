@@ -47,7 +47,7 @@ def play_audio_js(text):
     """
     components.html(js_code, height=0, width=0)
 
-# Đồng hồ đếm ngược JavaScript chạy trên trình duyệt (không gây giật lag)
+# Đồng hồ đếm ngược JS siêu mượt (chạy phía Trình duyệt)
 def render_js_timer(seconds, key_id):
     js_timer_code = f"""
     <div id="timer-box-{key_id}" style="
@@ -76,7 +76,7 @@ def render_js_timer(seconds, key_id):
                     elem.innerHTML = "0";
                     box.style.backgroundColor = "#FFE0B2";
                     box.style.color = "#E65100";
-                    box.innerHTML = "⏰ Đã hết thời gian làm câu này! Đang xem đáp án bên dưới.";
+                    box.innerHTML = "⏰ Đã hết thời gian làm câu này!";
                 }} else {{
                     elem.innerHTML = timeLeft;
                 }}
@@ -86,8 +86,31 @@ def render_js_timer(seconds, key_id):
     """
     components.html(js_timer_code, height=55)
 
+# Hàm phân tích số Quyển và số Bài để so sánh chính xác 100%
+def parse_book_and_lesson(text):
+    if not text: return ("", "")
+    s = str(text).strip()
+    b_match = re.search(r'Quyển\s*(\d+)', s, re.IGNORECASE)
+    l_match = re.search(r'Bài\s*(\d+)', s, re.IGNORECASE)
+    book = b_match.group(1) if b_match else ""
+    lesson = l_match.group(1) if l_match else ""
+    return (book, lesson)
+
+def is_lesson_selected(item_lesson, selected_lessons):
+    if not selected_lessons:
+        return True
+    item_bk, item_ls = parse_book_and_lesson(item_lesson)
+    for sel in selected_lessons:
+        if item_lesson and (item_lesson.strip() in sel.strip() or sel.strip() in item_lesson.strip()):
+            return True
+        sel_bk, sel_ls = parse_book_and_lesson(sel)
+        if item_bk and item_ls and sel_bk and sel_ls:
+            if item_bk == sel_bk and item_ls == sel_ls:
+                return True
+    return False
+
 # ==========================================
-# 📥 KHO DỮ LIỆU ĐẦY ĐỦ 100% (465 VOCAB & 129 SENTENCES)
+# 📥 KHO DỮ LIỆU CHUẨN FULL (465 VOCAB & 129 SENTENCES)
 # ==========================================
 FULL_VOCAB = [
     # Quyển 1 - Bài 1
@@ -417,7 +440,7 @@ FULL_VOCAB = [
     {"char": "早", "pinyin": "zǎo", "meaning": "sớm", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"char": "睡觉", "pinyin": "shuìjiào", "meaning": "ngủ", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"char": "睡", "pinyin": "shuì", "meaning": "ngủ", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
-    {"char": "因为", "pinyin": "yīnwèi", "meaning": "bởi vì", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
+    {"char": "เพราะ为", "pinyin": "yīnwèi", "meaning": "bởi vì", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"char": "晚", "pinyin": "wǎn", "meaning": "muộn", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
 
     # Quyển 2 - Bài 3
@@ -777,15 +800,11 @@ DYNAMIC_LESSONS = [
     "Quyển 2 - Bài 9: 你见过熊猫吗?", "Quyển 2 - Bài 10: 给您添麻烦了!"
 ]
 
-def get_lesson_num(text):
-    if not text: return ""
-    m = re.search(r'\d+', str(text))
-    return m.group(0) if m else ""
-
 # Khởi tạo trạng thái
 for k in ["score", "total", "q_id"]:
     if k not in st.session_state: st.session_state[k] = 0
 if "quiz_started" not in st.session_state: st.session_state.quiz_started = False
+if "quiz_finished" not in st.session_state: st.session_state.quiz_finished = False
 if "start_time" not in st.session_state: st.session_state.start_time = time.time()
 
 # --- 1. THANH BÊN CẤU HÌNH CÁ NHÂN ---
@@ -823,10 +842,7 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
     st.markdown("**Danh Sách Phòng:**")
     try:
         remote_response = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=2.0).json()
-        if isinstance(remote_response, list):
-            valid_rooms = [r for r in remote_response if isinstance(r, dict) and r.get("roomId")]
-        else:
-            valid_rooms = []
+        valid_rooms = [r for r in remote_response if isinstance(r, dict) and r.get("roomId")] if isinstance(remote_response, list) else []
     except Exception:
         valid_rooms = []
         
@@ -848,7 +864,6 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
                 questions_deck = []
                 for _ in range(int(r_num)):
                     tgt = random.choice(pool)
-                    
                     if "Dạng 1" in r_mode:
                         wrong_opts = [x.get("pinyin") for x in pool if x.get("pinyin") != tgt.get("pinyin")]
                         opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt.get("pinyin")]
@@ -865,10 +880,61 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
                 st.session_state.room_questions = questions_deck
                 st.rerun()
 
-# HÀM TẠO CÂU HỎI MỚI
-# =========================================================
-# 🔄 ĐOẠN MÃ THAY THẾ (GIỮ NGUYÊN FULL_VOCAB & FULL_SENTENCES BÊN TRÊN)
-# =========================================================
+# HÀM TẠO CÂU HỎI MỚI (Lọc bài chính xác 100%)
+def new_question(mode_choice, lessons_choice):
+    st.session_state.q_id += 1
+    st.session_state.start_time = time.time()
+    
+    vocab_pool = [i for i in FULL_VOCAB if is_lesson_selected(i.get("lesson"), lessons_choice)]
+    sent_pool = [i for i in FULL_SENTENCES if is_lesson_selected(i.get("lesson"), lessons_choice)]
+    
+    if not vocab_pool: vocab_pool = FULL_VOCAB
+    if not sent_pool: sent_pool = FULL_SENTENCES
+
+    if "Dạng 4" in mode_choice:
+        target = random.choice(sent_pool)
+        raw_sentence = re.sub(r'[？！。，、“”]', '', str(target.get("sentence", "")))
+        words = list(raw_sentence)
+        shuffled_words = list(words)
+        random.shuffle(shuffled_words)
+        st.session_state.question = {
+            "mode": 4, "meaning": target.get("meaning", ""), "correct_sentence": raw_sentence,
+            "shuffled_words": shuffled_words, "full_target": target.get("sentence", "")
+        }
+    else:
+        target = random.choice(vocab_pool)
+        
+        if "Dạng 1" in mode_choice:
+            wrong_opts = [item.get("pinyin") for item in FULL_VOCAB if item.get("pinyin") != target.get("pinyin")]
+            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target.get("pinyin")]
+            random.shuffle(opts)
+            st.session_state.question = {"mode": 1, "target": target, "options": opts, "correct_ans": target.get("pinyin")}
+            
+        elif "Dạng 2" in mode_choice:
+            wrong_opts = [item.get("char") for item in FULL_VOCAB if item.get("char") != target.get("char")]
+            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target.get("char")]
+            random.shuffle(opts)
+            st.session_state.question = {"mode": 2, "target": target, "options": opts, "correct_ans": target.get("char")}
+            
+        elif "Dạng 3" in mode_choice:
+            wrong_opts = [item.get("meaning") for item in FULL_VOCAB if item.get("meaning") != target.get("meaning")]
+            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target.get("meaning")]
+            random.shuffle(opts)
+            st.session_state.question = {"mode": 3, "target": target, "options": opts, "correct_ans": target.get("meaning")}
+
+if start_button:
+    st.session_state.quiz_started = True
+    st.session_state.quiz_finished = False
+    st.session_state.in_room_exam = False
+    st.session_state.active_mode = quiz_mode
+    st.session_state.active_lessons = selected_lessons
+    st.session_state.active_timer = time_per_question
+    st.session_state.score = 0
+    st.session_state.total = 0
+    new_question(quiz_mode, selected_lessons)
+    st.rerun()
+
+st.title("🎓 App Kiểm Tra Từ Vựng & Ngữ Pháp MSUTONG")
 
 # --- GIAO DIỆN TỔNG KẾT BÀI THI ---
 if st.session_state.get("quiz_finished", False):
@@ -925,7 +991,7 @@ elif st.session_state.get("in_room_exam", False):
                 st.session_state.room_q_index += 1
                 st.rerun()
 
-# --- GIAO DIỆN LÀM BÀI CÁ NHÂN (ĐÃ TỐI ƯU CỰC GỌN) ---
+# --- GIAO DIỆN LÀM BÀI CÁ NHÂN ---
 elif not st.session_state.quiz_started:
     st.info("👈 Chọn bài kiểm tra ở thanh bên trái và bấm **🚀 Bắt đầu kiểm tra**!")
 
@@ -946,7 +1012,6 @@ elif st.session_state.get("question"):
         
         user_selection = st.multiselect("Thứ tự câu ghép:", options=q["shuffled_words"], key=f"sent_{st.session_state.q_id}")
         
-        # Tự động chấm điểm khi ghép đủ ký tự
         if len(user_selection) == len(q["correct_sentence"]) and not has_answered:
             st.session_state.total += 1
             user_ans = "".join(user_selection)
@@ -955,7 +1020,6 @@ elif st.session_state.get("question"):
             st.session_state[score_flag_key] = is_correct
             st.rerun()
 
-        # Hiển thị kết quả gọn gàng nếu đã trả lời
         if has_answered:
             if st.session_state[score_flag_key]:
                 st.success(f"🎉 Rất xuất sắc! Câu chuẩn: **{q['full_target']}**")
@@ -972,8 +1036,6 @@ elif st.session_state.get("question"):
                 if st.button("🏁 Kết thúc kiểm tra", key=f"sent_finish_{st.session_state.q_id}"):
                     st.session_state.quiz_finished = True
                     st.rerun()
-
-        # Nếu chưa trả lời -> kiểm tra thời gian
         else:
             if remaining <= 0:
                 st.error("⏰ Hết thời gian làm câu này!")
@@ -1004,7 +1066,7 @@ elif st.session_state.get("question"):
             st.markdown(f"<h3 style='text-align: center; color: #666;'>{q['target']['pinyin']}</h3>", unsafe_allow_html=True)
             play_audio_js(q['target']['char'])
 
-        # TH 1: Đã chọn đáp án -> Ẩn timer, chỉ hiện 1 dòng kết quả + Nút điều hướng
+        # TH1: Đã chọn đáp án -> Ẩn đồng hồ đếm ngược, chỉ hiện 1 dòng kết quả + Nút điều hướng
         if has_answered:
             if st.session_state[score_flag_key]:
                 st.success("🎉 Chính xác!")
@@ -1021,7 +1083,7 @@ elif st.session_state.get("question"):
                     st.session_state.quiz_finished = True
                     st.rerun()
 
-        # TH 2: Chưa chọn đáp án
+        # TH2: Chưa chọn đáp án
         else:
             if remaining <= 0:
                 st.error("⏰ Hết thời gian làm câu này!")
