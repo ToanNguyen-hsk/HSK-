@@ -50,7 +50,36 @@ def play_audio_js(text):
     """
     components.html(js_code, height=0, width=0)
 
-DEFAULT_LESSONS = [
+def fetch_data_from_google(action_name):
+    try:
+        response = requests.get(
+            GOOGLE_SHEET_URL,
+            params={"action": action_name},
+            allow_redirects=True,
+            timeout=5.0
+        )
+        if response.status_code == 200:
+            res = response.json()
+            if isinstance(res, list):
+                return [item for item in res if isinstance(item, dict)]
+    except Exception:
+        pass
+    return []
+
+# Tải dữ liệu ban đầu nếu chưa có
+if "vocab_data" not in st.session_state or not st.session_state.vocab_data:
+    st.session_state.vocab_data = fetch_data_from_google("get_vocab")
+if "sentence_data" not in st.session_state or not st.session_state.sentence_data:
+    st.session_state.sentence_data = fetch_data_from_google("get_sentences")
+
+# Tự động trích xuất danh sách bài học ĐANG CÓ TRÊN GOOGLE SHEET
+raw_lessons = set()
+for item in st.session_state.vocab_data:
+    if item.get("lesson"): raw_lessons.add(str(item.get("lesson")).strip())
+for item in st.session_state.sentence_data:
+    if item.get("lesson"): raw_lessons.add(str(item.get("lesson")).strip())
+
+DYNAMIC_LESSONS = sorted(list(raw_lessons)) if raw_lessons else [
     "Quyển 1 - Bài 1: 你好", "Quyển 1 - Bài 2: 你叫什么名字?", "Quyển 1 - Bài 3: 很高兴认识你",
     "Quyển 1 - Bài 4: 你去哪儿?", "Quyển 1 - Bài 5: 你要吃什么?", "Quyển 1 - Bài 6: 你在哪儿工作?",
     "Quyển 1 - Bài 7: 中国银行在哪儿?", "Quyển 1 - Bài 8: 你的生日是几月几号?", "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影?",
@@ -60,57 +89,33 @@ DEFAULT_LESSONS = [
     "Quyển 2 - Bài 9: 你见过熊猫吗?", "Quyển 2 - Bài 10: 给您添麻烦了!"
 ]
 
-# Hàm làm sạch chuỗi bài học (xóa mọi dấu câu, khoảng trắng để so sánh 100% chính xác)
-def normalize_lesson_str(title):
-    if not title: return ""
-    return re.sub(r'[^\w\s]', '', str(title)).replace(" ", "").lower()
-
-def fetch_data_from_google(action_name):
-    try:
-        response = requests.get(
-            GOOGLE_SHEET_URL,
-            params={"action": action_name},
-            allow_redirects=True,
-            timeout=4.0
-        )
-        if response.status_code == 200:
-            res = response.json()
-            if isinstance(res, list):
-                clean_list = []
-                for item in res:
-                    if isinstance(item, dict):
-                        clean_list.append(item)
-                return clean_list
-    except Exception:
-        pass
-    return []
+def clean_key(s):
+    if not s: return ""
+    return re.sub(r'[^\w\s]', '', str(s)).replace(" ", "").lower()
 
 # Khởi tạo Session State
 for k in ["score", "total", "q_id"]:
     if k not in st.session_state: st.session_state[k] = 0
 if "quiz_started" not in st.session_state: st.session_state.quiz_started = False
 if "start_time" not in st.session_state: st.session_state.start_time = time.time()
-if "vocab_data" not in st.session_state: st.session_state.vocab_data = []
-if "sentence_data" not in st.session_state: st.session_state.sentence_data = []
 
-# --- 1. FORM CÁ NHÂN THANH BÊN TRÁI ---
-with st.sidebar.form("config_form"):
-    st.title("👤 Thông Tin Người Làm")
-    user_name = st.text_input("Họ và tên (không bắt buộc):", placeholder="Nhập tên của bạn...")
+# --- 1. THANH BÊN CẤU HÌNH CÁ NHÂN ---
+st.sidebar.title("👤 Thông Tin Người Làm")
+user_name = st.sidebar.text_input("Họ và tên (không bắt buộc):", placeholder="Nhập tên của bạn...")
 
-    st.title("⚙️ Tùy Chỉnh Bài Học")
-    selected_lessons = st.multiselect("Lựa chọn bài kiểm tra:", options=DEFAULT_LESSONS, default=DEFAULT_LESSONS)
+st.sidebar.title("⚙️ Tùy Chỉnh Bài Học")
+selected_lessons = st.sidebar.multiselect("Lựa chọn bài kiểm tra:", options=DYNAMIC_LESSONS, default=DYNAMIC_LESSONS)
 
-    st.title("🎯 Dạng Bài Tập")
-    quiz_mode = st.radio(
-        "Chọn dạng bài kiểm tra:",
-        ("Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa", "Dạng 4: Ghép câu hội thoại chuẩn")
-    )
+st.sidebar.title("🎯 Dạng Bài Tập")
+quiz_mode = st.sidebar.radio(
+    "Chọn dạng bài kiểm tra:",
+    ("Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa", "Dạng 4: Ghép câu hội thoại chuẩn")
+)
 
-    time_per_question = st.slider("⏱️ Thời gian mỗi câu (giây):", min_value=5, max_value=60, value=15)
-    start_button = st.form_submit_button("🚀 Bắt đầu kiểm tra", use_container_width=True)
+time_per_question = st.sidebar.slider("⏱️ Thời gian mỗi câu (giây):", min_value=5, max_value=60, value=15)
+start_button = st.sidebar.button("🚀 Bắt đầu kiểm tra", use_container_width=True)
 
-# --- 2. PHÒNG THI NHÓM ---
+# --- 2. KHU VỰC PHÒNG THI NHÓM (TRỰC TUYẾN) ---
 def get_public_rooms():
     try:
         res = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=1.5).json()
@@ -154,17 +159,14 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
                     st.session_state.room_q_index = 0
                     st.session_state.room_score = 0
                     
-                    if not st.session_state.vocab_data:
-                        st.session_state.vocab_data = fetch_data_from_google("get_vocab")
-                    
-                    normalized_selected = [normalize_lesson_str(x) for x in selected_lessons]
-                    pool = [x for x in st.session_state.vocab_data if isinstance(x, dict) and normalize_lesson_str(x.get("lesson")) in normalized_selected]
+                    normalized_selected = [clean_key(x) for x in selected_lessons]
+                    pool = [x for x in st.session_state.vocab_data if clean_key(x.get("lesson")) in normalized_selected]
                     if not pool: pool = st.session_state.vocab_data
                     
                     questions_deck = []
                     selected_targets = random.sample(pool, min(int(r_num), len(pool))) if pool else []
                     for tgt in selected_targets:
-                        wrong_opts = [x.get("pinyin") for x in st.session_state.vocab_data if isinstance(x, dict) and x.get("pinyin") != tgt.get("pinyin")]
+                        wrong_opts = [x.get("pinyin") for x in st.session_state.vocab_data if x.get("pinyin") != tgt.get("pinyin")]
                         opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt.get("pinyin")]
                         random.shuffle(opts)
                         questions_deck.append({"target": tgt, "options": opts})
@@ -175,12 +177,17 @@ def new_question(mode_choice, lessons_choice):
     st.session_state.q_id += 1
     st.session_state.start_time = time.time()
     
-    # So sánh chuẩn hóa chuỗi
-    normalized_selected = [normalize_lesson_str(x) for x in lessons_choice]
+    normalized_selected = [clean_key(x) for x in lessons_choice]
     
-    vocab_pool = [i for i in st.session_state.vocab_data if isinstance(i, dict) and normalize_lesson_str(i.get("lesson")) in normalized_selected]
-    sent_pool = [i for i in st.session_state.sentence_data if isinstance(i, dict) and normalize_lesson_str(i.get("lesson")) in normalized_selected]
+    vocab_pool = [i for i in st.session_state.vocab_data if clean_key(i.get("lesson")) in normalized_selected]
+    sent_pool = [i for i in st.session_state.sentence_data if clean_key(i.get("lesson")) in normalized_selected]
     
+    # Fallback nếu khớp lỏng
+    if not vocab_pool:
+        vocab_pool = [i for i in st.session_state.vocab_data if any(k in clean_key(i.get("lesson")) for k in normalized_selected)]
+    if not sent_pool:
+        sent_pool = [i for i in st.session_state.sentence_data if any(k in clean_key(i.get("lesson")) for k in normalized_selected)]
+
     if "Dạng 4" in mode_choice:
         pool = sent_pool if sent_pool else st.session_state.sentence_data
         if not pool:
@@ -201,25 +208,14 @@ def new_question(mode_choice, lessons_choice):
             st.session_state.question = None
             return
         target = random.choice(pool)
-        wrong_options = [item.get("pinyin") for item in st.session_state.vocab_data if isinstance(item, dict) and item.get("pinyin") != target.get("pinyin")]
+        wrong_options = [item.get("pinyin") for item in st.session_state.vocab_data if item.get("pinyin") != target.get("pinyin")]
         options = random.sample(wrong_options, min(3, len(wrong_options))) + [target.get("pinyin")]
         random.shuffle(options)
         st.session_state.question = {
             "mode": 1, "target": target, "options": options, "correct_ans": target.get("pinyin")
         }
 
-# CLICK NÚT BẮT ĐẦU KIỂM TRA
 if start_button:
-    with st.spinner("⏳ Đang tải cơ sở dữ liệu từ Google Sheet..."):
-        st.session_state.vocab_data = fetch_data_from_google("get_vocab")
-        st.session_state.sentence_data = fetch_data_from_google("get_sentences")
-        
-        if user_name and user_name.strip():
-            try:
-                requests.get(GOOGLE_SHEET_URL, params={"action": "ping_online", "name": user_name.strip()}, timeout=1.0)
-            except Exception:
-                pass
-                
     st.session_state.quiz_started = True
     st.session_state.in_room_exam = False
     st.session_state.active_mode = quiz_mode
@@ -233,7 +229,7 @@ if start_button:
 
 st.title("🎓 App Kiểm Tra Từ Vựng & Ngữ Pháp MSUTONG")
 
-# GIAO DIỆN LÀM BÀI MULTIPLAYER THI NHÓM
+# --- GIAO DIỆN LÀM BÀI ---
 if st.session_state.get("in_room_exam", False):
     rm_info = st.session_state.get("room_info", {})
     st.info(f"🏆 **ĐANG THI NHÓM MULTIPLAYER** | Phòng: **{rm_info.get('roomId')}**")
@@ -259,7 +255,6 @@ if st.session_state.get("in_room_exam", False):
             if ans == target.get("pinyin"): st.session_state.room_score += 1
             st.session_state.room_q_index += 1
             st.rerun()
-# GIAO DIỆN LÀM BÀI CÁ NHÂN
 else:
     if not st.session_state.quiz_started:
         st.info("👈 Điền thông tin, chọn bài kiểm tra ở thanh bên trái và bấm **🚀 Bắt đầu kiểm tra**!")
