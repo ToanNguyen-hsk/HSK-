@@ -40,13 +40,6 @@ st.markdown("""
         border: 2px solid #4CAF50;
         box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
-    .room-card {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 10px;
-        margin-bottom: 10px;
-        background-color: #f9f9f9;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -248,11 +241,14 @@ quiz_mode = st.sidebar.radio(
 
 start_button = st.sidebar.button("🚀 Bắt đầu kiểm tra", use_container_width=True)
 
-# Lấy danh sách phòng thi công khai từ Google Sheets
+# Hàm đọc phòng thi công khai xử lý an toàn
 def get_public_rooms():
     try:
         res = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=1.5).json()
-        return res if isinstance(res, list) else []
+        if isinstance(res, list):
+            # Bỏ qua hàng tiêu đề
+            return res[1:] if len(res) > 1 else []
+        return []
     except Exception:
         return []
 
@@ -276,30 +272,42 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
         try:
             res = requests.get(GOOGLE_SHEET_URL, params=params, timeout=2.0).json()
             if isinstance(res, dict) and res.get("roomId"):
-                st.success(f"Đã tạo: **{res.get('roomId')}**")
+                st.success(f"Đã tạo phòng: **{res.get('roomId')}**")
             else:
-                st.info("Đã gửi tạo phòng!")
+                st.info("Đã tạo phòng thi!")
         except Exception:
-            st.info("Đã gửi tạo phòng thi!")
+            st.info("Đã tạo phòng thi!")
 
     st.write("---")
     st.markdown("**Danh Sách Phòng Hiện Có:**")
     rooms_list = get_public_rooms()
     if not rooms_list:
-        st.caption("Chưa có phòng thi nào. Hãy nhấn 'Tạo Phòng Thi' ở trên!")
+        st.caption("Chưa có phòng thi nào. Nhấn 'Tạo Phòng Thi' để bắt đầu!")
     else:
-        for rm in rooms_list:
-            r_id = rm.get("roomId", "ROOM")
-            r_host = rm.get("host", "Host")
-            r_mode = rm.get("mode", "Dạng 1")
-            r_num = rm.get("numQ", 5)
-            r_time = rm.get("timeLimit", 3)
+        for idx, rm in enumerate(rooms_list):
+            # Ép kiểu an toàn cả List lẫn Dict
+            if isinstance(rm, list) and len(rm) >= 6:
+                r_id = rm[0]
+                r_host = rm[1]
+                r_mode = rm[3]
+                r_num = rm[4]
+                r_time = rm[5]
+            elif isinstance(rm, dict):
+                r_id = rm.get("roomId", "ROOM")
+                r_host = rm.get("host", "Host")
+                r_mode = rm.get("mode", "Dạng 1")
+                r_num = rm.get("numQ", 5)
+                r_time = rm.get("timeLimit", 3)
+            else:
+                continue
             
             st.markdown(f"**📌 {r_id}** (Host: {r_host})")
             st.caption(f"{r_mode} | {r_num} câu | {r_time} phút")
-            if st.button(f"🎮 Gia nhập {r_id}", key=f"join_{r_id}"):
+            if st.button(f"🎮 Gia nhập {r_id}", key=f"join_{r_id}_{idx}"):
                 st.session_state.in_room_exam = True
-                st.session_state.room_info = rm
+                st.session_state.room_info = {
+                    "roomId": r_id, "host": r_host, "mode": r_mode, "numQ": r_num, "timeLimit": r_time
+                }
                 st.session_state.room_q_index = 0
                 st.session_state.room_score = 0
                 st.session_state.room_start_time = time.time()
@@ -441,13 +449,13 @@ def handle_answer():
         is_correct = (user_choice == st.session_state.question["correct_ans"])
         record_answer(is_correct)
 
-# --- MÀN HÌNH CHÍNH (ĐẢM BẢO HIỂN THỊ PHÒNG THI KHI GIA NHẬP) ---
+# --- MÀN HÌNH CHÍNH ---
 st.title("🎓 App Kiểm Tra Từ Vựng & Ngữ Pháp MSUTONG")
 
-# LUỒNG LÀM BÀI PHÒNG THI MULTIPLAYER
+# LUỒNG PHÒNG THI MULTIPLAYER
 if st.session_state.get("in_room_exam", False):
     rm_info = st.session_state.get("room_info", {})
-    st.info(f"🏆 **ĐANG THI ĐẤU MULTIPLAYER** | Phòng: **{rm_info.get('roomId', 'ROOM')}** (Host: {rm_info.get('host')})")
+    st.info(f"🏆 **ĐANG THI MULTIPLAYER** | Phòng: **{rm_info.get('roomId', 'ROOM')}** (Host: {rm_info.get('host')})")
     
     elapsed = int(time.time() - st.session_state.get("room_start_time", time.time()))
     time_limit_sec = int(rm_info.get("timeLimit", 3)) * 60
@@ -455,7 +463,7 @@ if st.session_state.get("in_room_exam", False):
     
     if remaining <= 0:
         st.error("⏰ Đã hết thời gian làm bài thi!")
-        st.write(f"📊 Kết quả cuộc thi của bạn: **{st.session_state.get('room_score', 0)} / {rm_info.get('numQ', 5)}** câu đúng.")
+        st.write(f"📊 Kết quả cuộc thi: **{st.session_state.get('room_score', 0)} / {rm_info.get('numQ', 5)}** câu đúng.")
         if st.button("🚪 Thoát Phòng Thi"):
             st.session_state.in_room_exam = False
             st.rerun()
@@ -465,7 +473,7 @@ if st.session_state.get("in_room_exam", False):
         
         if st.session_state.get("room_q_index", 0) >= int(rm_info.get("numQ", 5)):
             st.balloons()
-            st.success("🎉 Bạn đã hoàn thành xuất sắc cuộc thi!")
+            st.success("🎉 Bạn đã hoàn thành cuộc thi!")
             st.write(f"📊 Tổng kết điểm số: **{st.session_state.get('room_score', 0)} / {rm_info.get('numQ', 5)}** câu đúng.")
             if st.button("🚪 Trở Về Trang Chủ"):
                 st.session_state.in_room_exam = False
@@ -488,7 +496,7 @@ if st.session_state.get("in_room_exam", False):
                 st.session_state.room_q_index = st.session_state.get("room_q_index", 0) + 1
                 st.rerun()
 
-# LUỒNG KIỂM TRA CÁ NHÂN CHUẨN CŨ
+# LUỒNG KIỂM TRA CÁ NHÂN CỦ
 else:
     if not st.session_state.quiz_started:
         st.info("👈 Hãy tích chọn các Bài ở danh mục bên trái, sau đó nhấn nút **🚀 Bắt đầu kiểm tra** để làm bài!")
