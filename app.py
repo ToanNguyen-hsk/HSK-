@@ -30,6 +30,13 @@ st.markdown("""
     .leaderboard-title {
         color: #1E88E5; font-size: 22px; font-weight: bold; margin-top: 15px; margin-bottom: 10px;
     }
+    /* Style cho các nút bấm chữ ghép câu */
+    div[data-testid="column"] button {
+        font-size: 24px !important;
+        font-weight: bold !important;
+        height: 55px !important;
+        border-radius: 12px !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -52,7 +59,7 @@ def play_audio_js(text):
     """
     components.html(js_code, height=0, width=0)
 
-# Đồng hồ đếm ngược JS tự nhảy đáp án trực tiếp trong DOM khi về 0s (không reload trang)
+# Đồng hồ đếm ngược JS
 def render_js_timer(seconds, key_id, correct_ans_display):
     clean_ans = correct_ans_display.replace("'", "\\'").replace('"', '\\"').replace("\n", " ")
     js_timer_code = f"""
@@ -1066,13 +1073,17 @@ elif not st.session_state.quiz_started:
 elif st.session_state.get("question"):
     q = st.session_state.question
     score_flag_key = f"scored_{st.session_state.q_id}"
+    word_state_key = f"word_indices_{st.session_state.q_id}"
+    if word_state_key not in st.session_state:
+        st.session_state[word_state_key] = []
+        
     has_answered = score_flag_key in st.session_state
     
     elapsed = time.time() - st.session_state.start_time
     timer_limit = st.session_state.get("active_timer", 15)
     remaining = max(0, int(timer_limit - elapsed))
 
-    # TÍNH CHUỖI HIỂN THỊ ĐÁP ÁN CHUẨN (KÈM DỊCH NGHĨA TIẾNG VIỆT CHO TẤT CẢ DẠNG BÀI)
+    # TÍNH CHUỖI HIỂN THỊ ĐÁP ÁN CHUẨN (KÈM DỊCH NGHĨA TIẾNG VIỆT FOR ALL MODES)
     if q.get("mode") == 4:
         correct_ans_display = f"{q['full_target']} ({q['meaning']})"
     elif q["mode"] == 1:
@@ -1082,27 +1093,45 @@ elif st.session_state.get("question"):
     elif q["mode"] == 3:
         correct_ans_display = f"{q['target']['meaning']} ({q['target']['pinyin']})"
 
-    # --- DẠNG 4: GHÉP CÂU ---
+    # --- DẠNG 4: GHÉP CÂU HỘI THOẠI (DÙNG CÁC NÚT BẤM CÁC THẺ CHỮ TRỰC TIẾP) ---
     if q.get("mode") == 4:
         st.subheader("🧩 Bài Tập Ghép Câu Hội Thoại")
         st.markdown(f"### 💡 **Ý nghĩa:** `{q['meaning']}`")
         
-        # HIỂN THỊ CÁC THẺ CHỮ XÁO TRỘN RÕ RÀNG BẰNG KHUNG THẺ NỔI BẬT
-        st.markdown("**Các chữ / từ cần ghép:**")
-        chips_html = " ".join([f"<span style='background-color: #E3F2FD; color: #0D47A1; padding: 8px 16px; border-radius: 12px; font-size: 24px; font-weight: bold; margin: 4px; display: inline-block; border: 2px solid #90CAF9;'>{w}</span>" for w in q["shuffled_words"]])
-        st.markdown(f"<div style='margin-bottom: 12px;'>{chips_html}</div>", unsafe_allow_html=True)
+        # HIỂN THỊ CÂU BẠN ĐÃ GHÉP
+        selected_indices = st.session_state[word_state_key]
+        user_sentence_str = "".join([q["shuffled_words"][i] for i in selected_indices])
         
-        st.caption("Chọn lần lượt từng từ theo thứ tự để xếp thành câu đúng:")
-        user_selection = st.multiselect("Thứ tự câu ghép:", options=q["shuffled_words"], placeholder="Bấm vào đây để chọn chữ theo thứ tự...", key=f"sent_{st.session_state.q_id}")
+        display_str = user_sentence_str if user_sentence_str else "..."
+        st.markdown(f"<div style='background-color: #F1F8E9; padding: 12px 16px; border-radius: 10px; border: 2px solid #C8E6C9; margin-bottom: 12px;'><span style='font-size: 18px; color: #555;'>Thứ tự câu bạn ghép:</span> <br><span style='font-size: 28px; font-weight: bold; color: #2E7D32;'>{display_str}</span></div>", unsafe_allow_html=True)
         
-        if len(user_selection) == len(q["correct_sentence"]) and not has_answered:
+        # HIỂN THỊ CÁC NÚT THẺ CHỮ TRỰC TIẾP ĐỂ BẤM CHỌN
+        st.markdown("**Click trực tiếp vào các từ/chữ dưới đây theo thứ tự:**")
+        num_words = len(q["shuffled_words"])
+        cols = st.columns(min(num_words, 8))
+        
+        for idx, word in enumerate(q["shuffled_words"]):
+            col = cols[idx % min(num_words, 8)]
+            is_used = idx in selected_indices
+            if col.button(word, key=f"w_btn_{st.session_state.q_id}_{idx}", disabled=is_used or has_answered, use_container_width=True):
+                st.session_state[word_state_key].append(idx)
+                st.rerun()
+
+        # NÚT RESET LÀM LẠI TỪ ĐẦU NẾU CHỌN NHẦM
+        if selected_indices and not has_answered:
+            if st.button("🔄 Chọn lại từ đầu", key=f"reset_w_{st.session_state.q_id}"):
+                st.session_state[word_state_key] = []
+                st.rerun()
+
+        # TỰ ĐỘNG CHẤM ĐIỂM KHIN CHỌN ĐỦ TOÀN BỘ CÁC CHỮ
+        if len(selected_indices) == num_words and not has_answered:
             st.session_state.total += 1
-            user_ans = "".join(user_selection)
-            is_correct = (user_ans == q["correct_sentence"])
+            is_correct = (user_sentence_str == q["correct_sentence"])
             st.session_state.score += (1 if is_correct else 0)
             st.session_state[score_flag_key] = is_correct
             st.rerun()
 
+        # TH1: ĐÃ TRẢ LỜI
         if has_answered:
             if st.session_state[score_flag_key]:
                 st.success(f"🎉 Rất xuất sắc! Câu chuẩn: **{q['full_target']}** ({q['meaning']})")
@@ -1113,6 +1142,8 @@ elif st.session_state.get("question"):
             if st.button("Câu tiếp theo ➡️", key=f"sent_next_{st.session_state.q_id}", use_container_width=True):
                 new_question(st.session_state.active_mode, st.session_state.active_lessons)
                 st.rerun()
+
+        # TH2: CHƯA TRẢ LỜI -> HIỂN THỊ TIMER VÀ NÚT ĐIỀU HƯỚNG
         else:
             render_js_timer(remaining, st.session_state.q_id, correct_ans_display)
             if st.button("Sang câu tiếp theo ➡️", key=f"timeout_sent_next_{st.session_state.q_id}", use_container_width=True):
