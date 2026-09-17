@@ -182,7 +182,7 @@ VOCAB_DATA = [
     {"char": "正在", "pinyin": "zhèngzài", "meaning": "đang", "lesson": LESSON_NAMES["Q2_1"]},
     {"char": "听", "pinyin": "tīng", "meaning": "nghe", "lesson": LESSON_NAMES["Q2_1"]},
     {"char": "起床", "pinyin": "qǐchuáng", "meaning": "thức dậy", "lesson": LESSON_NAMES["Q2_2"]},
-    {"char": "可以", "pinyin": "kěyǐ", "meaning": "có thể", "lesson": LESSON_NAMES["Q2_3"]},
+    {"char": " सकते可以用", "pinyin": "kěyǐ", "meaning": "có thể", "lesson": LESSON_NAMES["Q2_3"]},
     {"char": "衣服", "pinyin": "yīfu", "meaning": "quần áo", "lesson": LESSON_NAMES["Q2_4"]},
     {"char": "空儿", "pinyin": "kòngr", "meaning": "thời gian rảnh", "lesson": LESSON_NAMES["Q2_5"]}
 ]
@@ -193,7 +193,7 @@ SENTENCE_DATA = [
     {"words": ["你", "叫", "什么", "名字"], "pinyin_words": ["Nǐ", "jiào", "shénme", "míngzi"], "lesson": LESSON_NAMES["Q1_2"]},
     {"words": ["请问", "您", "贵姓"], "pinyin_words": ["Qǐngwèn", "nín", "guìxìng"], "lesson": LESSON_NAMES["Q1_3"]},
     {"words": ["我", "去", "人民", "广场"], "pinyin_words": ["Wǒ", "qù", "Rénmín", "Guǎngchǎng"], "lesson": LESSON_NAMES["Q1_4"]},
-    {"words": ["请问", "这个", "多少", "钱"], "pinyin_words": ["Qǐngwèn", "zhège", "duōshao", "qián"], "lesson": LESSON_NAMES["Q1_4"]},
+    {"words": ["请问", " cái这", "多少", "钱"], "pinyin_words": ["Qǐngwèn", "zhège", "duōshao", "qián"], "lesson": LESSON_NAMES["Q1_4"]},
     {"words": ["师傅", "去", "飞机场", "远", "不", "远"], "pinyin_words": ["Shīfu", "qù", "fēijīchǎng", "yuǎn", "bù", "yuǎn"], "lesson": LESSON_NAMES["Q1_4"]},
     {"words": ["一共", "是", "五十", "块", "钱"], "pinyin_words": ["Yígòng", "shì", "wǔshí", "kuài", "qián"], "lesson": LESSON_NAMES["Q1_4"]},
     {"words": ["到", "火车站", "坐", "地铁"], "pinyin_words": ["Dào", "huǒchēzhàn", "zuò", "dìtiě"], "lesson": LESSON_NAMES["Q1_4"]},
@@ -208,9 +208,9 @@ user_name = st.sidebar.text_input("Họ và tên (không bắt buộc):", placeh
 def update_online_status():
     if user_name and user_name.strip():
         try:
-            url = f"{GOOGLE_SHEET_URL}?action=ping_online&name={requests.utils.quote(user_name.strip())}"
-            requests.get(url, timeout=1.5)
-            res = requests.get(f"{GOOGLE_SHEET_URL}?action=get_online", timeout=1.5)
+            params = {"action": "ping_online", "name": user_name.strip()}
+            requests.get(GOOGLE_SHEET_URL, params=params, timeout=1.5)
+            res = requests.get(GOOGLE_SHEET_URL, params={"action": "get_online"}, timeout=1.5)
             return res.json()
         except Exception:
             return [user_name.strip()]
@@ -241,7 +241,7 @@ quiz_mode = st.sidebar.radio(
 
 start_button = st.sidebar.button("🚀 Bắt đầu kiểm tra", use_container_width=True)
 
-# --- SIDEBAR EXPANDER: PHÒNG THI MULTIPLAYER (GET METHOD CHUẨN TRÁNH LỖI) ---
+# --- SIDEBAR EXPANDER: PHÒNG THI MULTIPLAYER (SỬA LỖI MÃ HÓA CỐ ĐỊNH) ---
 with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False):
     st.caption("Khởi tạo cuộc thi nhỏ cho mọi người cùng thi")
     host_mode = st.selectbox("Dạng bài thi:", ["Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa", "Dạng 4: Ghép nối câu từ Hán & Pinyin"])
@@ -250,12 +250,21 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
     
     if st.button("➕ Tạo Phòng Thi"):
         h_name = user_name.strip() if user_name.strip() else "Ẩn danh"
-        lessons_str = json.dumps(selected_lessons)
-        url = f"{GOOGLE_SHEET_URL}?action=create_room&host={requests.utils.quote(h_name)}&lessons={requests.utils.quote(lessons_str)}&mode={requests.utils.quote(host_mode)}&num_questions={host_num_questions}&time_limit={host_time_limit}"
+        params = {
+            "action": "create_room",
+            "host": h_name,
+            "lessons": json.dumps(selected_lessons),
+            "mode": host_mode,
+            "num_questions": host_num_questions,
+            "time_limit": host_time_limit
+        }
         try:
-            res = requests.get(url, timeout=2.5).json()
-            st.success(f"Tạo phòng thành công: **{res.get('roomId', 'ROOM_1')}**")
-        except Exception:
+            res = requests.get(GOOGLE_SHEET_URL, params=params, timeout=3.0).json()
+            if res.get("roomId"):
+                st.success(f"Tạo phòng thành công: **{res.get('roomId')}**")
+            else:
+                st.warning("Máy chủ phòng bận, thử lại sau.")
+        except Exception as err:
             st.error("Chưa kết nối được máy chủ phòng!")
 
 # Khởi tạo trạng thái ứng dụng
@@ -368,9 +377,14 @@ if start_button:
 def send_to_google_sheet(is_correct):
     name = user_name.strip() if user_name.strip() else "Ẩn danh"
     mode_clean = st.session_state.question["mode"].replace(":", " -")
-    url = f"{GOOGLE_SHEET_URL}?action=submit_score&name={requests.utils.quote(name)}&mode={requests.utils.quote(mode_clean)}&is_correct={1 if is_correct else 0}"
+    params = {
+        "action": "submit_score",
+        "name": name,
+        "mode": mode_clean,
+        "is_correct": 1 if is_correct else 0
+    }
     try:
-        requests.get(url, timeout=2.0)
+        requests.get(GOOGLE_SHEET_URL, params=params, timeout=2.0)
     except Exception:
         pass
 
