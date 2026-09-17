@@ -30,7 +30,6 @@ st.markdown("""
     .leaderboard-title {
         color: #1E88E5; font-size: 22px; font-weight: bold; margin-top: 15px; margin-bottom: 10px;
     }
-    /* Style phóng to các nút bấm ô chữ ghép câu Dạng 4 */
     div[data-testid="column"] button p {
         font-size: 32px !important;
         font-weight: bold !important;
@@ -124,7 +123,6 @@ def is_lesson_selected(item_lesson, selected_lessons):
                 return True
     return False
 
-# Cache danh sách phòng thi để loại bỏ độ trễ 3s trên mỗi lượt click
 @st.cache_data(ttl=15)
 def fetch_rooms_from_sheet():
     try:
@@ -1056,6 +1054,7 @@ elif st.session_state.get("in_room_exam", False):
             correct_ans = f"{target.get('pinyin')} ({target.get('meaning', '')})"
         elif "Dạng 2" in r_mode:
             st.markdown(f"<h1 style='text-align: center; font-size: 70px; color: #1E88E5;'>{target.get('pinyin')}</h1>", unsafe_allow_html=True)
+            play_audio_js(target.get('char'))
             correct_ans = f"{target.get('char')} ({target.get('meaning', '')})"
         else:
             st.markdown(f"<h1 style='text-align: center; font-size: 80px; color: #1E88E5;'>{target.get('char')}</h1>", unsafe_allow_html=True)
@@ -1107,6 +1106,12 @@ elif st.session_state.get("question"):
         st.subheader("🧩 Bài Tập Ghép Câu Hội Thoại")
         st.markdown(f"### 💡 **Ý nghĩa:** `{q['meaning']}`")
         
+        # Phát âm từ vừa click (nếu có)
+        last_word_key = f"last_word_{st.session_state.q_id}"
+        if last_word_key in st.session_state:
+            play_audio_js(st.session_state[last_word_key])
+            del st.session_state[last_word_key]
+
         # HIỂN THỊ CÂU BẠN ĐÃ GHÉP
         selected_indices = st.session_state[word_state_key]
         user_sentence_str = "".join([q["shuffled_words"][i] for i in selected_indices])
@@ -1114,7 +1119,7 @@ elif st.session_state.get("question"):
         display_str = user_sentence_str if user_sentence_str else "..."
         st.markdown(f"<div style='background-color: #F1F8E9; padding: 12px 16px; border-radius: 10px; border: 2px solid #C8E6C9; margin-bottom: 12px;'><span style='font-size: 18px; color: #555;'>Thứ tự câu bạn ghép:</span> <br><span style='font-size: 28px; font-weight: bold; color: #2E7D32;'>{display_str}</span></div>", unsafe_allow_html=True)
         
-        # HIỂN THỊ CÁC NÚT BẤM CÁC THẺ CHỮ TRỰC TIẾP
+        # HIỂN THỊ CÁC NÚT BẤM THẺ CHỮ TRỰC TIẾP
         st.markdown("**Click trực tiếp vào các từ/chữ dưới đây theo thứ tự:**")
         num_words = len(q["shuffled_words"])
         cols = st.columns(min(num_words, 8))
@@ -1124,6 +1129,7 @@ elif st.session_state.get("question"):
             is_used = idx in selected_indices
             if col.button(word, key=f"w_btn_{st.session_state.q_id}_{idx}", disabled=is_used or has_answered, use_container_width=True):
                 st.session_state[word_state_key].append(idx)
+                st.session_state[last_word_key] = word
                 st.rerun()
 
         # NÚT XÓA CHỮ VỪA CHỌN VÀ NÚT CHỌN LẠI TỪ ĐẦU
@@ -1158,7 +1164,7 @@ elif st.session_state.get("question"):
                 new_question(st.session_state.active_mode, st.session_state.active_lessons)
                 st.rerun()
 
-        # TH2: CHƯA TRẢ LỜI -> BẤM SANG CÂU TIẾP THEO MỌI LÚC
+        # TH2: CHƯA TRẢ LỜI -> HIỂN THỊ TIMER VÀ NÚT ĐIỀU HƯỚNG
         else:
             render_js_timer(remaining, st.session_state.q_id, correct_ans_display)
             if st.button("Sang câu tiếp theo ➡️", key=f"timeout_sent_next_{st.session_state.q_id}", use_container_width=True):
@@ -1172,6 +1178,7 @@ elif st.session_state.get("question"):
             play_audio_js(q['target']['char'])
         elif q["mode"] == 2:
             st.markdown(f"<h1 style='text-align: center; font-size: 80px; color: #1E88E5;'>{q['target']['pinyin']}</h1>", unsafe_allow_html=True)
+            play_audio_js(q['target']['char'])
         elif q["mode"] == 3:
             st.markdown(f"<h1 style='text-align: center; font-size: 70px; color: #1E88E5;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
             st.markdown(f"<h3 style='text-align: center; color: #666;'>{q['target']['pinyin']}</h3>", unsafe_allow_html=True)
