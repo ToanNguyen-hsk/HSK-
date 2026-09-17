@@ -866,64 +866,22 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
                 st.rerun()
 
 # HÀM TẠO CÂU HỎI MỚI
-def new_question(mode_choice, lessons_choice):
-    st.session_state.q_id += 1
-    st.session_state.start_time = time.time()
-    
-    selected_nums = set([get_lesson_num(x) for x in lessons_choice if get_lesson_num(x)])
-    
-    vocab_pool = [i for i in FULL_VOCAB if get_lesson_num(i.get("lesson")) in selected_nums]
-    sent_pool = [i for i in FULL_SENTENCES if get_lesson_num(i.get("lesson")) in selected_nums]
-    
-    if not vocab_pool: vocab_pool = FULL_VOCAB
-    if not sent_pool: sent_pool = FULL_SENTENCES
+# =========================================================
+# 🔄 ĐOẠN MÃ THAY THẾ (GIỮ NGUYÊN FULL_VOCAB & FULL_SENTENCES BÊN TRÊN)
+# =========================================================
 
-    if "Dạng 4" in mode_choice:
-        target = random.choice(sent_pool)
-        raw_sentence = re.sub(r'[？！。，、“”]', '', str(target.get("sentence", "")))
-        words = list(raw_sentence)
-        shuffled_words = list(words)
-        random.shuffle(shuffled_words)
-        st.session_state.question = {
-            "mode": 4, "meaning": target.get("meaning", ""), "correct_sentence": raw_sentence,
-            "shuffled_words": shuffled_words, "full_target": target.get("sentence", "")
-        }
-    else:
-        target = random.choice(vocab_pool)
-        
-        if "Dạng 1" in mode_choice:
-            wrong_opts = [item.get("pinyin") for item in FULL_VOCAB if item.get("pinyin") != target.get("pinyin")]
-            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target.get("pinyin")]
-            random.shuffle(opts)
-            st.session_state.question = {"mode": 1, "target": target, "options": opts, "correct_ans": target.get("pinyin")}
-            
-        elif "Dạng 2" in mode_choice:
-            wrong_opts = [item.get("char") for item in FULL_VOCAB if item.get("char") != target.get("char")]
-            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target.get("char")]
-            random.shuffle(opts)
-            st.session_state.question = {"mode": 2, "target": target, "options": opts, "correct_ans": target.get("char")}
-            
-        elif "Dạng 3" in mode_choice:
-            wrong_opts = [item.get("meaning") for item in FULL_VOCAB if item.get("meaning") != target.get("meaning")]
-            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target.get("meaning")]
-            random.shuffle(opts)
-            st.session_state.question = {"mode": 3, "target": target, "options": opts, "correct_ans": target.get("meaning")}
-
-if start_button:
-    st.session_state.quiz_started = True
-    st.session_state.in_room_exam = False
-    st.session_state.active_mode = quiz_mode
-    st.session_state.active_lessons = selected_lessons
-    st.session_state.active_timer = time_per_question
-    st.session_state.score = 0
-    st.session_state.total = 0
-    new_question(quiz_mode, selected_lessons)
-    st.rerun()
-
-st.title("🎓 App Kiểm Tra Từ Vựng & Ngữ Pháp MSUTONG")
+# --- GIAO DIỆN TỔNG KẾT BÀI THI ---
+if st.session_state.get("quiz_finished", False):
+    st.balloons()
+    st.success("🎉 BẠN ĐÃ HOÀN THÀNH BÀI KIỂM TRA!")
+    st.write(f"📊 Điểm số chung cuộc: **{st.session_state.get('score', 0)} / {st.session_state.get('total', 0)}** câu đúng.")
+    if st.button("🔄 Làm bài kiểm tra mới"):
+        st.session_state.quiz_started = False
+        st.session_state.quiz_finished = False
+        st.rerun()
 
 # --- GIAO DIỆN LÀM BÀI PHÒNG THI NHÓM ---
-if st.session_state.get("in_room_exam", False):
+elif st.session_state.get("in_room_exam", False):
     rm_info = st.session_state.get("room_info", {})
     st.info(f"🏆 **ĐANG THI NHÓM MULTIPLAYER** | Phòng: **{rm_info.get('roomId')}**")
     curr_idx = st.session_state.get("room_q_index", 0)
@@ -967,99 +925,129 @@ if st.session_state.get("in_room_exam", False):
                 st.session_state.room_q_index += 1
                 st.rerun()
 
-# --- GIAO DIỆN LÀM BÀI CÁ NHÂN ---
+# --- GIAO DIỆN LÀM BÀI CÁ NHÂN (ĐÃ TỐI ƯU CỰC GỌN) ---
 elif not st.session_state.quiz_started:
     st.info("👈 Chọn bài kiểm tra ở thanh bên trái và bấm **🚀 Bắt đầu kiểm tra**!")
 
 elif st.session_state.get("question"):
     q = st.session_state.question
+    score_flag_key = f"scored_{st.session_state.q_id}"
+    has_answered = score_flag_key in st.session_state
     
     elapsed = time.time() - st.session_state.start_time
     timer_limit = st.session_state.get("active_timer", 15)
     remaining = max(0, int(timer_limit - elapsed))
-    
-    # HẾT GIỜ: TỰ ĐỘNG THÔNG BÁO VÀ SHOW ĐÁP ÁN ĐÚNG
-    if remaining <= 0:
-        st.error("⏰ Hết thời gian làm câu này!")
-        
-        # HIỂN THỊ ĐÁP ÁN CHUẨN KHI HẾT GIỜ
-        if q.get("mode") == 4:
-            st.warning(f"💡 Đáp án đúng là: **{q['full_target']}** (*{q.get('meaning', '')}*)")
-            play_audio_js(q['full_target'])
-        else:
-            meaning_info = f" - *{q['target'].get('meaning', '')}*" if q['target'].get('meaning') else ""
-            st.warning(f"💡 Đáp án đúng là: **{q['correct_ans']}**{meaning_info}")
-            if q['target'].get('char'):
-                play_audio_js(q['target']['char'])
-                
-        if st.button("Sang câu tiếp theo ➡️"):
-            new_question(st.session_state.active_mode, st.session_state.active_lessons)
-            st.rerun()
-            
-    # CÒN THỜI GIAN: HIỂN THỊ ĐỒNG HỒ CLIENT-SIDE & CHO PHÉP LÀM BÀI
-    else:
-        render_js_timer(remaining, st.session_state.q_id)
-        
-        # DẠNG 4: GHÉP CÂU
-        if q.get("mode") == 4:
-            st.subheader("🧩 Bài Tập Ghép Câu Hội Thoại")
-            st.markdown(f"### 💡 **Ý nghĩa:** `{q['meaning']}`")
-            st.caption("Chọn lần lượt từng từ để xếp thành câu đúng:")
-            
-            user_selection = st.multiselect("Thứ tự câu ghép:", options=q["shuffled_words"], key=f"sent_{st.session_state.q_id}")
-            
-            if len(user_selection) == len(q["correct_sentence"]):
-                score_flag_key = f"scored_{st.session_state.q_id}"
-                if score_flag_key not in st.session_state:
-                    st.session_state.total += 1
-                    user_ans = "".join(user_selection)
-                    if user_ans == q["correct_sentence"]:
-                        st.session_state.score += 1
-                        st.session_state[score_flag_key] = True
-                    else:
-                        st.session_state[score_flag_key] = False
 
-                if st.session_state[score_flag_key]:
-                    st.success(f"🎉 Rất xuất sắc! Câu chuẩn: **{q['full_target']}**")
-                    play_audio_js(q["full_target"])
-                else:
-                    st.error(f"❌ Chưa đúng rồi! Đáp án chuẩn: **{q['full_target']}**")
-                
-                if st.button("Câu tiếp theo ➡️"):
+    # --- DẠNG 4: GHÉP CÂU ---
+    if q.get("mode") == 4:
+        st.subheader("🧩 Bài Tập Ghép Câu Hội Thoại")
+        st.markdown(f"### 💡 **Ý nghĩa:** `{q['meaning']}`")
+        st.caption("Chọn lần lượt từng từ để xếp thành câu đúng:")
+        
+        user_selection = st.multiselect("Thứ tự câu ghép:", options=q["shuffled_words"], key=f"sent_{st.session_state.q_id}")
+        
+        # Tự động chấm điểm khi ghép đủ ký tự
+        if len(user_selection) == len(q["correct_sentence"]) and not has_answered:
+            st.session_state.total += 1
+            user_ans = "".join(user_selection)
+            is_correct = (user_ans == q["correct_sentence"])
+            st.session_state.score += (1 if is_correct else 0)
+            st.session_state[score_flag_key] = is_correct
+            st.rerun()
+
+        # Hiển thị kết quả gọn gàng nếu đã trả lời
+        if has_answered:
+            if st.session_state[score_flag_key]:
+                st.success(f"🎉 Rất xuất sắc! Câu chuẩn: **{q['full_target']}**")
+                play_audio_js(q["full_target"])
+            else:
+                st.error(f"❌ Chưa đúng rồi! Đáp án chuẩn: **{q['full_target']}**")
+            
+            col1, col2 = st.columns([3, 2])
+            with col1:
+                if st.button("Câu tiếp theo ➡️", key=f"sent_next_{st.session_state.q_id}"):
                     new_question(st.session_state.active_mode, st.session_state.active_lessons)
                     st.rerun()
+            with col2:
+                if st.button("🏁 Kết thúc kiểm tra", key=f"sent_finish_{st.session_state.q_id}"):
+                    st.session_state.quiz_finished = True
+                    st.rerun()
 
-        # DẠNG 1, 2, 3: TRẮC NGHIỆM TỰ ĐỘNG CHẤM KHI TÍCH CHỌN
+        # Nếu chưa trả lời -> kiểm tra thời gian
         else:
-            if q["mode"] == 1:
-                st.markdown(f"<h1 style='text-align: center; font-size: 100px; color: #1E88E5;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
-                play_audio_js(q['target']['char'])
-            elif q["mode"] == 2:
-                st.markdown(f"<h1 style='text-align: center; font-size: 80px; color: #1E88E5;'>{q['target']['pinyin']}</h1>", unsafe_allow_html=True)
-            elif q["mode"] == 3:
-                st.markdown(f"<h1 style='text-align: center; font-size: 70px; color: #1E88E5;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
-                st.markdown(f"<h3 style='text-align: center; color: #666;'>{q['target']['pinyin']}</h3>", unsafe_allow_html=True)
-                play_audio_js(q['target']['char'])
+            if remaining <= 0:
+                st.error("⏰ Hết thời gian làm câu này!")
+                st.warning(f"💡 Đáp án đúng là: **{q['full_target']}** (*{q.get('meaning', '')}*)")
+                play_audio_js(q['full_target'])
+                
+                col1, col2 = st.columns([3, 2])
+                with col1:
+                    if st.button("Sang câu tiếp theo ➡️", key=f"timeout_sent_next_{st.session_state.q_id}"):
+                        new_question(st.session_state.active_mode, st.session_state.active_lessons)
+                        st.rerun()
+                with col2:
+                    if st.button("🏁 Kết thúc kiểm tra", key=f"timeout_sent_finish_{st.session_state.q_id}"):
+                        st.session_state.quiz_finished = True
+                        st.rerun()
+            else:
+                render_js_timer(remaining, st.session_state.q_id)
 
-            user_choice = st.radio("Chọn đáp án:", q["options"], index=None, key=f"radio_{st.session_state.q_id}")
-            
-            if user_choice is not None:
-                score_flag_key = f"scored_{st.session_state.q_id}"
-                if score_flag_key not in st.session_state:
-                    st.session_state.total += 1
-                    if user_choice == q["correct_ans"]:
-                        st.session_state.score += 1
-                        st.session_state[score_flag_key] = True
-                    else:
-                        st.session_state[score_flag_key] = False
+    # --- DẠNG 1, 2, 3: TRẮC NGHIỆM ---
+    else:
+        if q["mode"] == 1:
+            st.markdown(f"<h1 style='text-align: center; font-size: 100px; color: #1E88E5;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
+            play_audio_js(q['target']['char'])
+        elif q["mode"] == 2:
+            st.markdown(f"<h1 style='text-align: center; font-size: 80px; color: #1E88E5;'>{q['target']['pinyin']}</h1>", unsafe_allow_html=True)
+        elif q["mode"] == 3:
+            st.markdown(f"<h1 style='text-align: center; font-size: 70px; color: #1E88E5;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='text-align: center; color: #666;'>{q['target']['pinyin']}</h3>", unsafe_allow_html=True)
+            play_audio_js(q['target']['char'])
 
-                if st.session_state[score_flag_key]:
-                    st.success("🎉 Chính xác!")
-                else:
-                    st.error(f"❌ Sai rồi! Đáp án đúng: **{q['correct_ans']}** ({q['target'].get('meaning', '')})")
+        # TH 1: Đã chọn đáp án -> Ẩn timer, chỉ hiện 1 dòng kết quả + Nút điều hướng
+        if has_answered:
+            if st.session_state[score_flag_key]:
+                st.success("🎉 Chính xác!")
+            else:
+                st.error(f"❌ Sai rồi! Đáp án đúng: **{q['correct_ans']}** ({q['target'].get('meaning', '')})")
 
-                if st.button("Câu tiếp theo ➡️"):
+            col1, col2 = st.columns([3, 2])
+            with col1:
+                if st.button("Câu tiếp theo ➡️", key=f"ans_next_{st.session_state.q_id}"):
                     new_question(st.session_state.active_mode, st.session_state.active_lessons)
+                    st.rerun()
+            with col2:
+                if st.button("🏁 Kết thúc kiểm tra", key=f"ans_finish_{st.session_state.q_id}"):
+                    st.session_state.quiz_finished = True
+                    st.rerun()
+
+        # TH 2: Chưa chọn đáp án
+        else:
+            if remaining <= 0:
+                st.error("⏰ Hết thời gian làm câu này!")
+                meaning_info = f" - *{q['target'].get('meaning', '')}*" if q['target'].get('meaning') else ""
+                st.warning(f"💡 Đáp án đúng là: **{q['correct_ans']}**{meaning_info}")
+                if q['target'].get('char'):
+                    play_audio_js(q['target']['char'])
+                
+                col1, col2 = st.columns([3, 2])
+                with col1:
+                    if st.button("Sang câu tiếp theo ➡️", key=f"timeout_next_{st.session_state.q_id}"):
+                        new_question(st.session_state.active_mode, st.session_state.active_lessons)
+                        st.rerun()
+                with col2:
+                    if st.button("🏁 Kết thúc kiểm tra", key=f"timeout_finish_{st.session_state.q_id}"):
+                        st.session_state.quiz_finished = True
+                        st.rerun()
+            else:
+                render_js_timer(remaining, st.session_state.q_id)
+                user_choice = st.radio("Chọn đáp án:", q["options"], index=None, key=f"radio_{st.session_state.q_id}")
+                
+                if user_choice is not None:
+                    st.session_state.total += 1
+                    is_correct = (user_choice == q["correct_ans"])
+                    st.session_state.score += (1 if is_correct else 0)
+                    st.session_state[score_flag_key] = is_correct
                     st.rerun()
 
 st.sidebar.markdown("---")
