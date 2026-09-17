@@ -11,9 +11,8 @@ import streamlit.components.v1 as components
 # 1. Cấu hình trang web
 st.set_page_config(page_title="App Ôn Tập Từ Vựng HSK - MSUTONG 1 & 2", layout="centered")
 
-GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxcnKRCCcd-iIkzspRGjS4jnwdCU3A25FwAVCBWlmJHMKT2le5kYd22O3i-V-fv3c0V/exec"
+GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyFGBMkcRyOK1z_Hw7KEd3zSnJvnKQGxn-6MUnMwFyC4StagIWtbWqQe5MqgPkkqDb4/exec"
 
-# CSS Tùy chỉnh Avatar Online & UI
 st.markdown("""
     <style>
     section.main div[data-testid="stRadio"] label p {
@@ -79,7 +78,6 @@ def play_audio_js(text):
 
 # Danh mục Tên 20 bài học chuẩn MSUTONG
 LESSON_NAMES = {
-    # Quyển 1
     "Q1_1": "Quyển 1 - Bài 1: 你好 (Nǐ hǎo)",
     "Q1_2": "Quyển 1 - Bài 2: 你叫什么名字? (Nǐ jiào shénme míngzi?)",
     "Q1_3": "Quyển 1 - Bài 3: 很高兴认识你 (Hěn gāoxìng rènshi nǐ)",
@@ -90,8 +88,6 @@ LESSON_NAMES = {
     "Q1_8": "Quyển 1 - Bài 8: 你的生日是几月几号? (Nǐ de shēngrì shì jǐ yuè jǐ hào?)",
     "Q1_9": "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影? (Nǐ xǐhuan Zhōngguó diànyǐng háishi Měiguó diànyǐng?)",
     "Q1_10": "Quyển 1 - Bài 10: 你家有几口人? (Nǐ jiā yǒu jǐ kǒu rén?)",
-    
-    # Quyển 2
     "Q2_1": "Quyển 2 - Bài 1: 你在听什么? (Nǐ zài tīng shénme?)",
     "Q2_2": "Quyển 2 - Bài 2: 你平时几点起床? (Nǐ píngshí jǐ diǎn qǐchuáng?)",
     "Q2_3": "Quyển 2 - Bài 3: 可以用一下你的手机吗? (Kěyǐ yòng yíxià nǐ de shǒujī ma?)",
@@ -104,9 +100,9 @@ LESSON_NAMES = {
     "Q2_10": "Quyển 2 - Bài 10: 给您添麻烦了! (Gěi nín tiān máfan le!)"
 }
 
-# Kho từ vựng đầy đủ (Từ chính + Từ bổ sung)
+# FULL TỪ VỰNG CHÍNH VÀ TỪ BỔ SUNG
 VOCAB_DATA = [
-    # --- QUYỂN 1 ---
+    # QUYỂN 1: BÀI 1
     {"char": "你好", "pinyin": "nǐ hǎo", "meaning": "xin chào", "lesson": LESSON_NAMES["Q1_1"]},
     {"char": "您", "pinyin": "nín", "meaning": "ngài, ông, bà", "lesson": LESSON_NAMES["Q1_1"]},
     {"char": "你们", "pinyin": "nǐmen", "meaning": "các bạn", "lesson": LESSON_NAMES["Q1_1"]},
@@ -116,6 +112,10 @@ VOCAB_DATA = [
     {"char": "谢谢", "pinyin": "xièxie", "meaning": "cảm ơn", "lesson": LESSON_NAMES["Q1_1"]},
     {"char": "不客气", "pinyin": "bú kèqi", "meaning": "không có gì", "lesson": LESSON_NAMES["Q1_1"]},
     {"char": "再见", "pinyin": "zàijiàn", "meaning": "tạm biệt", "lesson": LESSON_NAMES["Q1_1"]},
+    {"char": "王", "pinyin": "Wáng", "meaning": "họ Vương", "lesson": LESSON_NAMES["Q1_1"]},
+    {"char": "大卫", "pinyin": "Dàwèi", "meaning": "David", "lesson": LESSON_NAMES["Q1_1"]},
+
+    # QUYỂN 1: BÀI 2
     {"char": "叫", "pinyin": "jiào", "meaning": "gọi, tên là", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "什么", "pinyin": "shénme", "meaning": "gì, cái gì", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "名字", "pinyin": "míngzi", "meaning": "tên", "lesson": LESSON_NAMES["Q1_2"]},
@@ -125,9 +125,21 @@ VOCAB_DATA = [
     {"char": "哪", "pinyin": "nǎ", "meaning": "nào", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "国", "pinyin": "guó", "meaning": "nước, quốc gia", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "人", "pinyin": "rén", "meaning": "người", "lesson": LESSON_NAMES["Q1_2"]},
+    {"char": "卡玛拉", "pinyin": "Kǎmǎlā", "meaning": "Kamala", "lesson": LESSON_NAMES["Q1_2"]},
+    {"char": "高小明", "pinyin": "Gāo Xiǎomíng", "meaning": "Cao Tiểu Minh", "lesson": LESSON_NAMES["Q1_2"]},
+    {"char": "南非", "pinyin": "Nánfēi", "meaning": "Nam Phi", "lesson": LESSON_NAMES["Q1_2"]},
     {"char": "中国", "pinyin": "Zhōngguó", "meaning": "Trung Quốc", "lesson": LESSON_NAMES["Q1_2"]},
+
+    # QUYỂN 1: BÀI 3
     {"char": "请问", "pinyin": "qǐngwèn", "meaning": "xin hỏi", "lesson": LESSON_NAMES["Q1_3"]},
     {"char": "贵姓", "pinyin": "guìxìng", "meaning": "quý danh, quý họ", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "姓", "pinyin": "xìng", "meaning": "họ", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "这", "pinyin": "zhè", "meaning": "đây, này", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "名片", "pinyin": "míngpiàn", "meaning": "danh thiếp", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "很高兴", "pinyin": "gāoxìng", "meaning": "vui mừng", "lesson": LESSON_NAMES["Q1_3"]},
+    {"char": "认识", "pinyin": "rènshi", "meaning": "quen biết", "lesson": LESSON_NAMES["Q1_3"]},
+
+    # QUYỂN 1: BÀI 4
     {"char": "小姐", "pinyin": "xiǎojiě", "meaning": "cô, tiểu thư", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "师傅", "pinyin": "shīfu", "meaning": "bác tài, thợ", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "去", "pinyin": "qù", "meaning": "đi", "lesson": LESSON_NAMES["Q1_4"]},
@@ -146,22 +158,38 @@ VOCAB_DATA = [
     {"char": "公共汽车", "pinyin": "gōnggòng qìchē", "meaning": "xe buýt", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "打车", "pinyin": "dǎ chē", "meaning": "bắt xe", "lesson": LESSON_NAMES["Q1_4"]},
     {"char": "地铁", "pinyin": "dìtiě", "meaning": "tàu điện ngầm", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "银行", "pinyin": "yínháng", "meaning": "ngân hàng", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "公安局", "pinyin": "gōng'ān jú", "meaning": "sở công an", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "饭店", "pinyin": "fàndiàn", "meaning": "nhà hàng", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "邮局", "pinyin": "yóujú", "meaning": "bưu điện", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "宾馆", "pinyin": "bīnguǎn", "meaning": "khách sạn", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "洗手间", "pinyin": "xǐshǒujiān", "meaning": "nhà vệ sinh", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "飞机场", "pinyin": "fēijīchǎng", "meaning": "sân bay", "lesson": LESSON_NAMES["Q1_4"]},
+    {"char": "火车站", "pinyin": "huǒchēzhàn", "meaning": "ga tàu hỏa", "lesson": LESSON_NAMES["Q1_4"]},
+
+    # QUYỂN 1: BÀI 5
     {"char": "要", "pinyin": "yào", "meaning": "muốn, cần", "lesson": LESSON_NAMES["Q1_5"]},
     {"char": "吃", "pinyin": "chī", "meaning": "ăn", "lesson": LESSON_NAMES["Q1_5"]},
     {"char": "牛肉", "pinyin": "niúròu", "meaning": "thịt bò", "lesson": LESSON_NAMES["Q1_5"]},
     {"char": "米饭", "pinyin": "mǐfàn", "meaning": "cơm", "lesson": LESSON_NAMES["Q1_5"]},
     {"char": "咖啡", "pinyin": "kāfēi", "meaning": "cà phê", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "奶茶", "pinyin": "nǎichá", "meaning": "trà sữa", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "包子", "pinyin": "bāozi", "meaning": "bánh bao", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "饺子", "pinyin": "jiǎozi", "meaning": "sủi cáo", "lesson": LESSON_NAMES["Q1_5"]},
+    {"char": "面条", "pinyin": "miàntiáo", "meaning": "mì sợi", "lesson": LESSON_NAMES["Q1_5"]},
+
+    # BÀI 6 -> 10 QUYỂN 1
     {"char": "工作", "pinyin": "gōngzuò", "meaning": "công việc, làm việc", "lesson": LESSON_NAMES["Q1_6"]},
     {"char": "附近", "pinyin": "fùjìn", "meaning": "gần đây", "lesson": LESSON_NAMES["Q1_7"]},
     {"char": "生日", "pinyin": "shēngrì", "meaning": "sinh nhật", "lesson": LESSON_NAMES["Q1_8"]},
     {"char": "喜欢", "pinyin": "xǐhuan", "meaning": "thích", "lesson": LESSON_NAMES["Q1_9"]},
     {"char": "爸爸", "pinyin": "bàba", "meaning": "bố", "lesson": LESSON_NAMES["Q1_10"]},
 
-    # --- QUYỂN 2 ---
+    # QUYỂN 2
     {"char": "正在", "pinyin": "zhèngzài", "meaning": "đang", "lesson": LESSON_NAMES["Q2_1"]},
     {"char": "听", "pinyin": "tīng", "meaning": "nghe", "lesson": LESSON_NAMES["Q2_1"]},
     {"char": "起床", "pinyin": "qǐchuáng", "meaning": "thức dậy", "lesson": LESSON_NAMES["Q2_2"]},
-    {"char": " सकते可以用", "pinyin": "kěyǐ", "meaning": "có thể", "lesson": LESSON_NAMES["Q2_3"]},
+    {"char": "可以", "pinyin": "kěyǐ", "meaning": "có thể", "lesson": LESSON_NAMES["Q2_3"]},
     {"char": "衣服", "pinyin": "yīfu", "meaning": "quần áo", "lesson": LESSON_NAMES["Q2_4"]},
     {"char": "空儿", "pinyin": "kòngr", "meaning": "thời gian rảnh", "lesson": LESSON_NAMES["Q2_5"]}
 ]
@@ -172,7 +200,7 @@ SENTENCE_DATA = [
     {"words": ["你", "叫", "什么", "名字"], "pinyin_words": ["Nǐ", "jiào", "shénme", "míngzi"], "lesson": LESSON_NAMES["Q1_2"]},
     {"words": ["请问", "您", "贵姓"], "pinyin_words": ["Qǐngwèn", "nín", "guìxìng"], "lesson": LESSON_NAMES["Q1_3"]},
     {"words": ["我", "去", "人民", "广场"], "pinyin_words": ["Wǒ", "qù", "Rénmín", "Guǎngchǎng"], "lesson": LESSON_NAMES["Q1_4"]},
-    {"words": ["请问", " cái这", "多少", "钱"], "pinyin_words": ["Qǐngwèn", "zhège", "duōshao", "qián"], "lesson": LESSON_NAMES["Q1_4"]},
+    {"words": ["请问", "这个", "多少", "钱"], "pinyin_words": ["Qǐngwèn", "zhège", "duōshao", "qián"], "lesson": LESSON_NAMES["Q1_4"]},
     {"words": ["师傅", "去", "飞机场", "远", "不", "远"], "pinyin_words": ["Shīfu", "qù", "fēijīchǎng", "yuǎn", "bù", "yuǎn"], "lesson": LESSON_NAMES["Q1_4"]},
     {"words": ["一共", "是", "五十", "块", "钱"], "pinyin_words": ["Yígòng", "shì", "wǔshí", "kuài", "qián"], "lesson": LESSON_NAMES["Q1_4"]},
     {"words": ["到", "火车站", "坐", "地铁"], "pinyin_words": ["Dào", "huǒchēzhàn", "zuò", "dìtiě"], "lesson": LESSON_NAMES["Q1_4"]},
@@ -187,7 +215,8 @@ user_name = st.sidebar.text_input("Họ và tên (không bắt buộc):", placeh
 def update_online_status():
     if user_name and user_name.strip():
         try:
-            requests.post(GOOGLE_SHEET_URL, json={"action": "ping_online", "name": user_name.strip()}, timeout=1.5)
+            headers = {'Content-Type': 'application/json'}
+            requests.post(GOOGLE_SHEET_URL, json={"action": "ping_online", "name": user_name.strip()}, headers=headers, timeout=1.5)
             res = requests.get(f"{GOOGLE_SHEET_URL}?action=get_online", timeout=1.5)
             return res.json()
         except Exception:
@@ -236,7 +265,8 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
             "time_limit": host_time_limit
         }
         try:
-            res = requests.post(GOOGLE_SHEET_URL, json=payload, timeout=2.5).json()
+            headers = {'Content-Type': 'application/json'}
+            res = requests.post(GOOGLE_SHEET_URL, json=payload, headers=headers, timeout=2.5).json()
             st.success(f"Phòng: **{res.get('roomId', 'ROOM_1')}**")
         except Exception:
             st.error("Chưa kết nối được máy chủ phòng!")
@@ -353,7 +383,8 @@ def send_to_google_sheet(is_correct):
     mode_clean = st.session_state.question["mode"].replace(":", " -")
     payload = {"action": "submit_score", "name": name, "mode": mode_clean, "is_correct": 1 if is_correct else 0}
     try:
-        requests.post(GOOGLE_SHEET_URL, json=payload, timeout=2.5)
+        headers = {'Content-Type': 'application/json'}
+        requests.post(GOOGLE_SHEET_URL, json=payload, headers=headers, timeout=2.5)
     except Exception:
         pass
 
@@ -371,7 +402,7 @@ def handle_answer():
         is_correct = (user_choice == st.session_state.question["correct_ans"])
         record_answer(is_correct)
 
-# --- GIAO DIỆN KIỂM TRA CÁ NHÂN CHUẨN NGUYÊN BẢN CŨ ---
+# --- GIAO DIỆN KIỂM TRA CÁ NHÂN CHUẨN CŨ ---
 st.title("🎓 App Kiểm Tra Từ Vựng & Ngữ Pháp MSUTONG")
 
 if not st.session_state.quiz_started:
@@ -480,7 +511,7 @@ else:
         new_question()
         st.rerun()
 
-# --- BẢNG TỶ SỐ CŨ NGUYÊN BẢN ---
+# --- BẢNG TỶ SỐ ---
 with st.sidebar.expander("📊 Bảng Xếp Hạng Tỷ Số", expanded=False):
     try:
         res = requests.get(GOOGLE_SHEET_URL, timeout=2.5)
@@ -489,9 +520,9 @@ with st.sidebar.expander("📊 Bảng Xếp Hạng Tỷ Số", expanded=False):
             st.write("Chưa có dữ liệu làm bài nào.")
         else:
             df = pd.DataFrame(sheet_data[1:], columns=sheet_data[0])
-            df["is_correct"] = pd.to_numeric(df["Kết quả (1=Đúng, 0=Sai)"])
+            df["is_correct"] = pd.to_numeric(df["Result"])
             
-            summary_df = df.groupby(["Tên", "Dạng bài"]).agg(
+            summary_df = df.groupby(["Name", "Mode"]).agg(
                 Tong_Cau=("is_correct", "count"),
                 Cau_Dung=("is_correct", "sum")
             ).reset_index()
@@ -500,10 +531,10 @@ with st.sidebar.expander("📊 Bảng Xếp Hạng Tỷ Số", expanded=False):
             
             st.write("**Bảng xếp hạng thi đua (%)**")
             st.dataframe(
-                summary_df[["Tên", "Dạng bài", "Ty_Le_Dung_%", "Cau_Dung", "Tong_Cau"]],
+                summary_df[["Name", "Mode", "Ty_Le_Dung_%", "Cau_Dung", "Tong_Cau"]],
                 column_config={
-                    "Tên": "Họ & Tên",
-                    "Dạng bài": "Dạng bài",
+                    "Name": "Họ & Tên",
+                    "Mode": "Dạng bài",
                     "Ty_Le_Dung_%": "Tỷ lệ đúng (%)",
                     "Cau_Dung": "Đúng",
                     "Tong_Cau": "Tổng"
@@ -513,7 +544,7 @@ with st.sidebar.expander("📊 Bảng Xếp Hạng Tỷ Số", expanded=False):
             )
             
             st.write("**Biểu đồ Tỷ lệ đúng (%)**")
-            chart_data = summary_df.pivot(index="Tên", columns="Dạng bài", values="Ty_Le_Dung_%").fillna(0)
+            chart_data = summary_df.pivot(index="Name", columns="Mode", values="Ty_Le_Dung_%").fillna(0)
             chart_data.columns = [str(col).replace("➡️", "->") for col in chart_data.columns]
             st.bar_chart(chart_data)
     except Exception:
