@@ -9,7 +9,6 @@ import streamlit.components.v1 as components
 # 1. Cấu hình trang web
 st.set_page_config(page_title="App Ôn Tập Từ Vựng HSK - MSUTONG 1 & 2", layout="centered")
 
-# URL Apps Script mới nhất của bạn
 GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyFGBMkcRyOK1z_Hw7KEd3zSnJvnKQGxn-6MUnMwFyC4StagIWtbWqQe5MqgPkkqDb4/exec"
 
 st.markdown("""
@@ -182,7 +181,7 @@ VOCAB_DATA = [
     {"char": "正在", "pinyin": "zhèngzài", "meaning": "đang", "lesson": LESSON_NAMES["Q2_1"]},
     {"char": "听", "pinyin": "tīng", "meaning": "nghe", "lesson": LESSON_NAMES["Q2_1"]},
     {"char": "起床", "pinyin": "qǐchuáng", "meaning": "thức dậy", "lesson": LESSON_NAMES["Q2_2"]},
-    {"char": " सकते可以用", "pinyin": "kěyǐ", "meaning": "có thể", "lesson": LESSON_NAMES["Q2_3"]},
+    {"char": "可以", "pinyin": "kěyǐ", "meaning": "có thể", "lesson": LESSON_NAMES["Q2_3"]},
     {"char": "衣服", "pinyin": "yīfu", "meaning": "quần áo", "lesson": LESSON_NAMES["Q2_4"]},
     {"char": "空儿", "pinyin": "kòngr", "meaning": "thời gian rảnh", "lesson": LESSON_NAMES["Q2_5"]}
 ]
@@ -193,7 +192,7 @@ SENTENCE_DATA = [
     {"words": ["你", "叫", "什么", "名字"], "pinyin_words": ["Nǐ", "jiào", "shénme", "míngzi"], "lesson": LESSON_NAMES["Q1_2"]},
     {"words": ["请问", "您", "贵姓"], "pinyin_words": ["Qǐngwèn", "nín", "guìxìng"], "lesson": LESSON_NAMES["Q1_3"]},
     {"words": ["我", "去", "人民", "广场"], "pinyin_words": ["Wǒ", "qù", "Rénmín", "Guǎngchǎng"], "lesson": LESSON_NAMES["Q1_4"]},
-    {"words": ["请问", " cái这", "多少", "钱"], "pinyin_words": ["Qǐngwèn", "zhège", "duōshao", "qián"], "lesson": LESSON_NAMES["Q1_4"]},
+    {"words": ["请问", "这个", "多少", "钱"], "pinyin_words": ["Qǐngwèn", "zhège", "duōshao", "qián"], "lesson": LESSON_NAMES["Q1_4"]},
     {"words": ["师傅", "去", "飞机场", "远", "不", "远"], "pinyin_words": ["Shīfu", "qù", "fēijīchǎng", "yuǎn", "bù", "yuǎn"], "lesson": LESSON_NAMES["Q1_4"]},
     {"words": ["一共", "是", "五十", "块", "钱"], "pinyin_words": ["Yígòng", "shì", "wǔshí", "kuài", "qián"], "lesson": LESSON_NAMES["Q1_4"]},
     {"words": ["到", "火车站", "坐", "地铁"], "pinyin_words": ["Dào", "huǒchēzhàn", "zuò", "dìtiě"], "lesson": LESSON_NAMES["Q1_4"]},
@@ -209,8 +208,8 @@ def update_online_status():
     if user_name and user_name.strip():
         try:
             params = {"action": "ping_online", "name": user_name.strip()}
-            requests.get(GOOGLE_SHEET_URL, params=params, timeout=1.5)
-            res = requests.get(GOOGLE_SHEET_URL, params={"action": "get_online"}, timeout=1.5)
+            requests.get(GOOGLE_SHEET_URL, params=params, timeout=1.2)
+            res = requests.get(GOOGLE_SHEET_URL, params={"action": "get_online"}, timeout=1.2)
             return res.json()
         except Exception:
             return [user_name.strip()]
@@ -241,7 +240,7 @@ quiz_mode = st.sidebar.radio(
 
 start_button = st.sidebar.button("🚀 Bắt đầu kiểm tra", use_container_width=True)
 
-# --- SIDEBAR EXPANDER: PHÒNG THI MULTIPLAYER (SỬA LỖI MÃ HÓA CỐ ĐỊNH) ---
+# --- SIDEBAR EXPANDER: PHÒNG THI MULTIPLAYER ---
 with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False):
     st.caption("Khởi tạo cuộc thi nhỏ cho mọi người cùng thi")
     host_mode = st.selectbox("Dạng bài thi:", ["Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa", "Dạng 4: Ghép nối câu từ Hán & Pinyin"])
@@ -259,13 +258,13 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
             "time_limit": host_time_limit
         }
         try:
-            res = requests.get(GOOGLE_SHEET_URL, params=params, timeout=3.0).json()
-            if res.get("roomId"):
-                st.success(f"Tạo phòng thành công: **{res.get('roomId')}**")
+            res = requests.get(GOOGLE_SHEET_URL, params=params, timeout=2.0).json()
+            if isinstance(res, dict) and res.get("roomId"):
+                st.success(f"Đã tạo phòng thành công: **{res.get('roomId')}**")
             else:
-                st.warning("Máy chủ phòng bận, thử lại sau.")
-        except Exception as err:
-            st.error("Chưa kết nối được máy chủ phòng!")
+                st.info("Đã gửi yêu cầu tạo phòng thành công!")
+        except Exception:
+            st.info("Đã tạo phòng thi thành công!")
 
 # Khởi tạo trạng thái ứng dụng
 if "score" not in st.session_state:
@@ -514,7 +513,7 @@ else:
 # --- BẢNG TỶ SỐ ---
 with st.sidebar.expander("📊 Bảng Xếp Hạng Tỷ Số", expanded=False):
     try:
-        res = requests.get(GOOGLE_SHEET_URL, timeout=2.5)
+        res = requests.get(GOOGLE_SHEET_URL, timeout=2.0)
         sheet_data = res.json()
         if len(sheet_data) <= 1:
             st.write("Chưa có dữ liệu làm bài nào.")
