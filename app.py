@@ -4,6 +4,7 @@ import random
 import pandas as pd
 import requests
 import json
+import time
 import streamlit.components.v1 as components
 
 # 1. Cấu hình trang web
@@ -39,10 +40,17 @@ st.markdown("""
         border: 2px solid #4CAF50;
         box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
+    .room-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #f9f9f9;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# Hàm phát âm JS tức thì
+# Hàm phát âm JS
 def play_audio_js(text):
     if not text:
         return
@@ -192,7 +200,7 @@ SENTENCE_DATA = [
     {"words": ["你", "叫", "什么", "名字"], "pinyin_words": ["Nǐ", "jiào", "shénme", "míngzi"], "lesson": LESSON_NAMES["Q1_2"]},
     {"words": ["请问", "您", "贵姓"], "pinyin_words": ["Qǐngwèn", "nín", "guìxìng"], "lesson": LESSON_NAMES["Q1_3"]},
     {"words": ["我", "去", "人民", "广场"], "pinyin_words": ["Wǒ", "qù", "Rénmín", "Guǎngchǎng"], "lesson": LESSON_NAMES["Q1_4"]},
-    {"words": ["请问", "这个", "多少", "钱"], "pinyin_words": ["Qǐngwèn", "zhège", "duōshao", "qián"], "lesson": LESSON_NAMES["Q1_4"]},
+    {"words": ["请问", " cái这", "多少", "钱"], "pinyin_words": ["Qǐngwèn", "zhège", "duōshao", "qián"], "lesson": LESSON_NAMES["Q1_4"]},
     {"words": ["师傅", "去", "飞机场", "远", "不", "远"], "pinyin_words": ["Shīfu", "qù", "fēijīchǎng", "yuǎn", "bù", "yuǎn"], "lesson": LESSON_NAMES["Q1_4"]},
     {"words": ["一共", "是", "五十", "块", "钱"], "pinyin_words": ["Yígòng", "shì", "wǔshí", "kuài", "qián"], "lesson": LESSON_NAMES["Q1_4"]},
     {"words": ["到", "火车站", "坐", "地铁"], "pinyin_words": ["Dào", "huǒchēzhàn", "zuò", "dìtiě"], "lesson": LESSON_NAMES["Q1_4"]},
@@ -240,9 +248,17 @@ quiz_mode = st.sidebar.radio(
 
 start_button = st.sidebar.button("🚀 Bắt đầu kiểm tra", use_container_width=True)
 
+# Lấy danh sách phòng thi công khai từ Google Sheets
+def get_public_rooms():
+    try:
+        res = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=1.5).json()
+        return res if isinstance(res, list) else []
+    except Exception:
+        return []
+
 # --- SIDEBAR EXPANDER: PHÒNG THI MULTIPLAYER ---
-with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False):
-    st.caption("Khởi tạo cuộc thi nhỏ cho mọi người cùng thi")
+with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True):
+    st.caption("Khởi tạo hoặc gia nhập cuộc thi nhỏ")
     host_mode = st.selectbox("Dạng bài thi:", ["Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa", "Dạng 4: Ghép nối câu từ Hán & Pinyin"])
     host_num_questions = st.number_input("Số lượng câu:", min_value=3, max_value=50, value=5)
     host_time_limit = st.number_input("Thời gian (Phút):", min_value=1, max_value=60, value=3)
@@ -260,11 +276,34 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
         try:
             res = requests.get(GOOGLE_SHEET_URL, params=params, timeout=2.0).json()
             if isinstance(res, dict) and res.get("roomId"):
-                st.success(f"Đã tạo phòng thành công: **{res.get('roomId')}**")
+                st.success(f"Đã tạo: **{res.get('roomId')}**")
             else:
-                st.info("Đã gửi yêu cầu tạo phòng thành công!")
+                st.info("Đã gửi tạo phòng!")
         except Exception:
-            st.info("Đã tạo phòng thi thành công!")
+            st.info("Đã gửi tạo phòng thi!")
+
+    st.write("---")
+    st.markdown("**Danh Sách Phòng Hiện Có:**")
+    rooms_list = get_public_rooms()
+    if not rooms_list:
+        st.caption("Chưa có phòng thi nào. Hãy nhấn 'Tạo Phòng Thi' ở trên!")
+    else:
+        for rm in rooms_list:
+            r_id = rm.get("roomId", "ROOM")
+            r_host = rm.get("host", "Host")
+            r_mode = rm.get("mode", "Dạng 1")
+            r_num = rm.get("numQ", 5)
+            r_time = rm.get("timeLimit", 3)
+            
+            st.markdown(f"**📌 {r_id}** (Host: {r_host})")
+            st.caption(f"{r_mode} | {r_num} câu | {r_time} phút")
+            if st.button(f"🎮 Gia nhập {r_id}", key=f"join_{r_id}"):
+                st.session_state.in_room_exam = True
+                st.session_state.room_info = rm
+                st.session_state.room_q_index = 0
+                st.session_state.room_score = 0
+                st.session_state.room_start_time = time.time()
+                st.rerun()
 
 # Khởi tạo trạng thái ứng dụng
 if "score" not in st.session_state:
@@ -363,6 +402,7 @@ def new_question():
 
 if start_button:
     st.session_state.quiz_started = True
+    st.session_state.in_room_exam = False
     st.session_state.score = 0
     st.session_state.total = 0
     st.session_state.vocab_deck = list(filtered_vocab)
@@ -401,114 +441,160 @@ def handle_answer():
         is_correct = (user_choice == st.session_state.question["correct_ans"])
         record_answer(is_correct)
 
-# --- GIAO DIỆN KIỂM TRA CÁ NHÂN CHUẨN CŨ ---
+# --- MÀN HÌNH CHÍNH (ĐẢM BẢO HIỂN THỊ PHÒNG THI KHI GIA NHẬP) ---
 st.title("🎓 App Kiểm Tra Từ Vựng & Ngữ Pháp MSUTONG")
 
-if not st.session_state.quiz_started:
-    st.info("👈 Hãy tích chọn các Bài ở danh mục bên trái, sau đó nhấn nút **🚀 Bắt đầu kiểm tra** để làm bài!")
-elif not selected_lessons:
-    st.warning("⚠️ Vui lòng chọn ít nhất 1 Bài ở thanh bên trái!")
-elif st.session_state.question is None:
-    st.warning("⚠️ Không tìm thấy dữ liệu cho bài học đã chọn!")
+# LUỒNG LÀM BÀI PHÒNG THI MULTIPLAYER
+if st.session_state.get("in_room_exam", False):
+    rm_info = st.session_state.get("room_info", {})
+    st.info(f"🏆 **ĐANG THI ĐẤU MULTIPLAYER** | Phòng: **{rm_info.get('roomId', 'ROOM')}** (Host: {rm_info.get('host')})")
+    
+    elapsed = int(time.time() - st.session_state.get("room_start_time", time.time()))
+    time_limit_sec = int(rm_info.get("timeLimit", 3)) * 60
+    remaining = time_limit_sec - elapsed
+    
+    if remaining <= 0:
+        st.error("⏰ Đã hết thời gian làm bài thi!")
+        st.write(f"📊 Kết quả cuộc thi của bạn: **{st.session_state.get('room_score', 0)} / {rm_info.get('numQ', 5)}** câu đúng.")
+        if st.button("🚪 Thoát Phòng Thi"):
+            st.session_state.in_room_exam = False
+            st.rerun()
+    else:
+        st.warning(f"⏳ Thời gian còn lại: **{remaining // 60} phút {remaining % 60} giây**")
+        st.progress(min(1.0, max(0.0, (st.session_state.get("room_q_index", 0)) / int(rm_info.get("numQ", 5)))))
+        
+        if st.session_state.get("room_q_index", 0) >= int(rm_info.get("numQ", 5)):
+            st.balloons()
+            st.success("🎉 Bạn đã hoàn thành xuất sắc cuộc thi!")
+            st.write(f"📊 Tổng kết điểm số: **{st.session_state.get('room_score', 0)} / {rm_info.get('numQ', 5)}** câu đúng.")
+            if st.button("🚪 Trở Về Trang Chủ"):
+                st.session_state.in_room_exam = False
+                st.rerun()
+        else:
+            q_num = st.session_state.get("room_q_index", 0) + 1
+            target = random.choice(filtered_vocab) if filtered_vocab else VOCAB_DATA[0]
+            st.subheader(f"Câu {q_num}/{rm_info.get('numQ', 5)}:")
+            st.markdown(f"<h1 style='text-align: center; font-size: 90px; color: #1E88E5;'>{target['char']}</h1>", unsafe_allow_html=True)
+            play_audio_js(target['char'])
+            
+            wrong_opts = [x["pinyin"] for x in VOCAB_DATA if x["pinyin"] != target["pinyin"]]
+            options = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target["pinyin"]]
+            random.shuffle(options)
+            
+            ans = st.radio("Chọn phiên âm đúng:", options, key=f"rm_ans_{q_num}")
+            if st.button("Nộp câu này ➡️", key=f"rm_btn_{q_num}"):
+                if ans == target["pinyin"]:
+                    st.session_state.room_score = st.session_state.get("room_score", 0) + 1
+                st.session_state.room_q_index = st.session_state.get("room_q_index", 0) + 1
+                st.rerun()
+
+# LUỒNG KIỂM TRA CÁ NHÂN CHUẨN CŨ
 else:
-    q = st.session_state.question
-    mode = q["mode"]
-    current_radio_key = f"user_choice_radio_{st.session_state.q_id}"
+    if not st.session_state.quiz_started:
+        st.info("👈 Hãy tích chọn các Bài ở danh mục bên trái, sau đó nhấn nút **🚀 Bắt đầu kiểm tra** để làm bài!")
+    elif not selected_lessons:
+        st.warning("⚠️ Vui lòng chọn ít nhất 1 Bài ở thanh bên trái!")
+    elif st.session_state.question is None:
+        st.warning("⚠️ Không tìm thấy dữ liệu cho bài học đã chọn!")
+    else:
+        q = st.session_state.question
+        mode = q["mode"]
+        current_radio_key = f"user_choice_radio_{st.session_state.q_id}"
 
-    if mode == "Dạng 1: Chữ Hán ➡️ 4 Pinyin":
-        st.info("📌 **Dạng 1:** Hãy chọn phiên âm Pinyin đúng:")
-        st.markdown(f"<p style='text-align: center; font-size: 18px; color: #888;'>📚 Bài học: <b>{q['target']['lesson']}</b></p>", unsafe_allow_html=True)
-        st.markdown(f"<h1 style='text-align: center; font-size: 110px; color: #1E88E5;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
-        
-        play_audio_js(q['target']['char'])
-        
-        user_choice = st.radio("Chọn Pinyin:", q["options"], key=current_radio_key, on_change=handle_answer, index=None, label_visibility="collapsed")
-        
-        if st.session_state.answered:
-            if user_choice == q["correct_ans"]:
-                st.success("🎉 Chính xác!")
-            else:
-                st.error(f"❌ Sai rồi! Pinyin đúng của **{q['target']['char']}** là: **{q['correct_ans']}** ({q['target']['meaning']})")
-
-    elif mode == "Dạng 2: Pinyin ➡️ 4 Chữ Hán":
-        st.info("📌 **Dạng 2:** Hãy chọn Chữ Hán đúng:")
-        st.markdown(f"<p style='text-align: center; font-size: 18px; color: #888;'>📚 Bài học: <b>{q['target']['lesson']}</b></p>", unsafe_allow_html=True)
-        st.markdown(f"<h1 style='text-align: center; font-size: 70px; color: #E65100;'>{q['target']['pinyin']}</h1>", unsafe_allow_html=True)
-
-        user_choice = st.radio("Chọn Chữ Hán:", q["options"], key=current_radio_key, on_change=handle_answer, index=None, label_visibility="collapsed")
-        
-        if st.session_state.answered:
+        if mode == "Dạng 1: Chữ Hán ➡️ 4 Pinyin":
+            st.info("📌 **Dạng 1:** Hãy chọn phiên âm Pinyin đúng:")
+            st.markdown(f"<p style='text-align: center; font-size: 18px; color: #888;'>📚 Bài học: <b>{q['target']['lesson']}</b></p>", unsafe_allow_html=True)
+            st.markdown(f"<h1 style='text-align: center; font-size: 110px; color: #1E88E5;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
+            
             play_audio_js(q['target']['char'])
-            if user_choice == q["correct_ans"]:
-                st.success("🎉 Chính xác!")
-            else:
-                st.error(f"❌ Sai rồi! Chữ Hán đúng của **{q['target']['pinyin']}** là: **{q['correct_ans']}** ({q['target']['meaning']})")
+            
+            user_choice = st.radio("Chọn Pinyin:", q["options"], key=current_radio_key, on_change=handle_answer, index=None, label_visibility="collapsed")
+            
+            if st.session_state.answered:
+                if user_choice == q["correct_ans"]:
+                    st.success("🎉 Chính xác!")
+                else:
+                    st.error(f"❌ Sai rồi! Pinyin đúng của **{q['target']['char']}** là: **{q['correct_ans']}** ({q['target']['meaning']})")
 
-    elif mode == "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa":
-        st.info("📌 **Dạng 3:** Chọn nghĩa Tiếng Việt chính xác:")
-        st.markdown(f"<p style='text-align: center; font-size: 18px; color: #888;'>📚 Bài học: <b>{q['target']['lesson']}</b></p>", unsafe_allow_html=True)
-        st.markdown(f"<h1 style='text-align: center; font-size: 100px; color: #2E7D32;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
-        st.markdown(f"<p style='text-align: center; font-size: 24px; color: gray;'>Pinyin: <b>{q['target']['pinyin']}</b></p>", unsafe_allow_html=True)
+        elif mode == "Dạng 2: Pinyin ➡️ 4 Chữ Hán":
+            st.info("📌 **Dạng 2:** Hãy chọn Chữ Hán đúng:")
+            st.markdown(f"<p style='text-align: center; font-size: 18px; color: #888;'>📚 Bài học: <b>{q['target']['lesson']}</b></p>", unsafe_allow_html=True)
+            st.markdown(f"<h1 style='text-align: center; font-size: 70px; color: #E65100;'>{q['target']['pinyin']}</h1>", unsafe_allow_html=True)
 
-        play_audio_js(q['target']['char'])
+            user_choice = st.radio("Chọn Chữ Hán:", q["options"], key=current_radio_key, on_change=handle_answer, index=None, label_visibility="collapsed")
+            
+            if st.session_state.answered:
+                play_audio_js(q['target']['char'])
+                if user_choice == q["correct_ans"]:
+                    st.success("🎉 Chính xác!")
+                else:
+                    st.error(f"❌ Sai rồi! Chữ Hán đúng của **{q['target']['pinyin']}** là: **{q['correct_ans']}** ({q['target']['meaning']})")
 
-        user_choice = st.radio("Chọn Nghĩa:", q["options"], key=current_radio_key, on_change=handle_answer, index=None, label_visibility="collapsed")
-        
-        if st.session_state.answered:
-            if user_choice == q["correct_ans"]:
-                st.success("🎉 Chính xác!")
-            else:
-                st.error(f"❌ Sai rồi! Đáp án đúng là: **{q['correct_ans']}**")
+        elif mode == "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa":
+            st.info("📌 **Dạng 3:** Chọn nghĩa Tiếng Việt chính xác:")
+            st.markdown(f"<p style='text-align: center; font-size: 18px; color: #888;'>📚 Bài học: <b>{q['target']['lesson']}</b></p>", unsafe_allow_html=True)
+            st.markdown(f"<h1 style='text-align: center; font-size: 100px; color: #2E7D32;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align: center; font-size: 24px; color: gray;'>Pinyin: <b>{q['target']['pinyin']}</b></p>", unsafe_allow_html=True)
 
-    elif mode == "Dạng 4: Ghép nối câu từ Hán & Pinyin":
-        st.info("📌 **Dạng 4:** Bấm chọn từ để ghép thành câu hoàn chỉnh:")
-        st.markdown(f"<p style='font-size: 18px; color: #888;'>📚 Bài học: <b>{q['target_sent']['lesson']}</b></p>", unsafe_allow_html=True)
-        pinyin_hint = " ".join(q["target_sent"]["pinyin_words"])
-        st.markdown(f"<p style='font-size: 20px; color: #1565C0;'>💡 Gợi ý Pinyin: <b>{pinyin_hint}</b></p>", unsafe_allow_html=True)
-        
-        current_sentence = " ".join(st.session_state.selected_sentence_words)
-        st.markdown(f"### Câu bạn chọn: **{current_sentence}**")
-        
-        if st.session_state.speech_target:
-            play_audio_js(st.session_state.speech_target)
+            play_audio_js(q['target']['char'])
 
-        cols = st.columns(len(q["shuffled_words"]))
-        for idx, w in enumerate(q["shuffled_words"]):
-            if cols[idx].button(w, key=f"btn_{st.session_state.q_id}_{idx}"):
-                st.session_state.selected_sentence_words.append(w)
-                st.session_state.speech_target = w
-                st.rerun()
+            user_choice = st.radio("Chọn Nghĩa:", q["options"], key=current_radio_key, on_change=handle_answer, index=None, label_visibility="collapsed")
+            
+            if st.session_state.answered:
+                if user_choice == q["correct_ans"]:
+                    st.success("🎉 Chính xác!")
+                else:
+                    st.error(f"❌ Sai rồi! Đáp án đúng là: **{q['correct_ans']}**")
 
-        c1, c2 = st.columns([1, 1])
-        with c1:
-            if st.button("🔄 Xóa chọn lại"):
-                st.session_state.selected_sentence_words = []
-                st.session_state.speech_target = ""
-                st.rerun()
-        with c2:
-            if st.button("✔️ Nộp bài ghép câu"):
-                if not st.session_state.answered:
-                    st.session_state.answered = True
-                    user_sentence = " ".join(st.session_state.selected_sentence_words)
-                    is_correct = (user_sentence == q["correct_sent"])
-                    record_answer(is_correct)
-                    st.session_state.speech_target = "".join(st.session_state.selected_sentence_words)
+        elif mode == "Dạng 4: Ghép nối câu từ Hán & Pinyin":
+            st.info("📌 **Dạng 4:** Bấm chọn từ để ghép thành câu hoàn chỉnh:")
+            st.markdown(f"<p style='font-size: 18px; color: #888;'>📚 Bài học: <b>{q['target_sent']['lesson']}</b></p>", unsafe_allow_html=True)
+            pinyin_hint = " ".join(q["target_sent"]["pinyin_words"])
+            st.markdown(f"<p style='font-size: 20px; color: #1565C0;'>💡 Gợi ý Pinyin: <b>{pinyin_hint}</b></p>", unsafe_allow_html=True)
+            
+            current_sentence = " ".join(st.session_state.selected_sentence_words)
+            st.markdown(f"### Câu bạn chọn: **{current_sentence}**")
+            
+            if st.session_state.speech_target:
+                play_audio_js(st.session_state.speech_target)
+
+            cols = st.columns(len(q["shuffled_words"]))
+            for idx, w in enumerate(q["shuffled_words"]):
+                if cols[idx].button(w, key=f"btn_{st.session_state.q_id}_{idx}"):
+                    st.session_state.selected_sentence_words.append(w)
+                    st.session_state.speech_target = w
                     st.rerun()
 
-        if st.session_state.answered:
-            user_sentence = " ".join(st.session_state.selected_sentence_words)
-            if user_sentence == q["correct_sent"]:
-                st.success("🎉 Chính xác!")
-            else:
-                st.error(f"❌ Sai rồi! Câu đúng là:\n\n**{q['correct_sent']}**")
+            c1, c2 = st.columns([1, 1])
+            with c1:
+                if st.button("🔄 Xóa chọn lại"):
+                    st.session_state.selected_sentence_words = []
+                    st.session_state.speech_target = ""
+                    st.rerun()
+            with c2:
+                if st.button("✔️ Nộp bài ghép câu"):
+                    if not st.session_state.answered:
+                        st.session_state.answered = True
+                        user_sentence = " ".join(st.session_state.selected_sentence_words)
+                        is_correct = (user_sentence == q["correct_sent"])
+                        record_answer(is_correct)
+                        st.session_state.speech_target = "".join(st.session_state.selected_sentence_words)
+                        st.rerun()
 
-    st.write("---")
-    display_name = f" của **{user_name.strip()}**" if user_name.strip() else ""
-    st.write(f"📊 Kết quả học tập{display_name}: **{st.session_state.score} / {st.session_state.total}** câu đúng.")
-    
-    if st.button("Câu tiếp theo ➡️"):
-        new_question()
-        st.rerun()
+            if st.session_state.answered:
+                user_sentence = " ".join(st.session_state.selected_sentence_words)
+                if user_sentence == q["correct_sent"]:
+                    st.success("🎉 Chính xác!")
+                else:
+                    st.error(f"❌ Sai rồi! Câu đúng là:\n\n**{q['correct_sent']}**")
+
+        st.write("---")
+        display_name = f" của **{user_name.strip()}**" if user_name.strip() else ""
+        st.write(f"📊 Kết quả học tập{display_name}: **{st.session_state.score} / {st.session_state.total}** câu đúng.")
+        
+        if st.button("Câu tiếp theo ➡️"):
+            new_question()
+            st.rerun()
 
 # --- BẢNG TỶ SỐ ---
 with st.sidebar.expander("📊 Bảng Xếp Hạng Tỷ Số", expanded=False):
