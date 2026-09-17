@@ -227,7 +227,7 @@ if active_users:
     avatar_html += "</div>"
     st.sidebar.markdown(avatar_html, unsafe_allow_html=True)
 
-# --- SIDEBAR: TÙY CHỈNH BÀI HỌC CŨ ---
+# --- SIDEBAR: TÙY CHỈNH BÀI HỌC CỦ ---
 st.sidebar.title("⚙️ Tùy Chỉnh Bài Học")
 all_lessons_options = list(LESSON_NAMES.values())
 selected_lessons = st.sidebar.multiselect("Lựa chọn bài kiểm tra:", options=all_lessons_options, default=[LESSON_NAMES["Q1_4"]])
@@ -263,7 +263,6 @@ def get_public_rooms():
     except Exception:
         pass
     
-    # Hợp nhất phòng từ Server và Local tránh bị trễ
     all_rooms = list(st.session_state.local_rooms)
     for fr in fetched_rooms:
         if not any(r["roomId"] == fr["roomId"] for r in all_rooms):
@@ -290,10 +289,8 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
             "timeLimit": host_time_limit
         }
         
-        # 1. Lưu ngay vào local session để hiển thị lập tức
         st.session_state.local_rooms.insert(0, new_room_obj)
         
-        # 2. Gửi đồng bộ lên Google Sheets ngầm
         params = {
             "action": "create_room",
             "host": h_name,
@@ -331,9 +328,26 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
                 st.session_state.room_q_index = 0
                 st.session_state.room_score = 0
                 st.session_state.room_start_time = time.time()
+                
+                # CỐ ĐỊNH BỘ ĐỀ THI DÀNH CHO PHÒNG THI (SỬA LỖI ĐẾM CÂU)
+                pool = [x for x in VOCAB_DATA if x["lesson"] in selected_lessons]
+                if not pool:
+                    pool = VOCAB_DATA
+                
+                questions_deck = []
+                selected_targets = random.sample(pool, min(int(r_num), len(pool)))
+                for tgt in selected_targets:
+                    wrong_opts = [x["pinyin"] for x in VOCAB_DATA if x["pinyin"] != tgt["pinyin"]]
+                    opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt["pinyin"]]
+                    random.shuffle(opts)
+                    questions_deck.append({
+                        "target": tgt,
+                        "options": opts
+                    })
+                st.session_state.room_questions = questions_deck
                 st.rerun()
 
-# Khởi tạo trạng thái ứng dụng
+# Khởi tạo trạng thái ứng dụng cá nhân
 if "score" not in st.session_state:
     st.session_state.score = 0
 if "total" not in st.session_state:
@@ -472,7 +486,7 @@ def handle_answer():
 # --- MÀN HÌNH CHÍNH ---
 st.title("🎓 App Kiểm Tra Từ Vựng & Ngữ Pháp MSUTONG")
 
-# LUỒNG PHÒNG THI MULTIPLAYER
+# LUỒNG PHÒNG THI MULTIPLAYER (ĐÃ SỬA LỖI ĐẾM CÂU VÀ ĐÁP ÁN CO DỊNH)
 if st.session_state.get("in_room_exam", False):
     rm_info = st.session_state.get("room_info", {})
     st.info(f"🏆 **ĐANG THI MULTIPLAYER** | Phòng: **{rm_info.get('roomId', 'ROOM')}** (Host: {rm_info.get('host')})")
@@ -489,31 +503,40 @@ if st.session_state.get("in_room_exam", False):
             st.rerun()
     else:
         st.warning(f"⏳ Thời gian còn lại: **{remaining // 60} phút {remaining % 60} giây**")
-        st.progress(min(1.0, max(0.0, (st.session_state.get("room_q_index", 0)) / int(rm_info.get("numQ", 5)))))
+        curr_idx = st.session_state.get("room_q_index", 0)
+        total_q = int(rm_info.get("numQ", 5))
         
-        if st.session_state.get("room_q_index", 0) >= int(rm_info.get("numQ", 5)):
+        st.progress(min(1.0, max(0.0, curr_idx / total_q)))
+        
+        if curr_idx >= total_q:
             st.balloons()
             st.success("🎉 Bạn đã hoàn thành cuộc thi!")
-            st.write(f"📊 Tổng kết điểm số: **{st.session_state.get('room_score', 0)} / {rm_info.get('numQ', 5)}** câu đúng.")
+            st.write(f"📊 Tổng kết điểm số: **{st.session_state.get('room_score', 0)} / {total_q}** câu đúng.")
             if st.button("🚪 Trở Về Trang Chủ"):
                 st.session_state.in_room_exam = False
                 st.rerun()
         else:
-            q_num = st.session_state.get("room_q_index", 0) + 1
-            target = random.choice(filtered_vocab) if filtered_vocab else VOCAB_DATA[0]
-            st.subheader(f"Câu {q_num}/{rm_info.get('numQ', 5)}:")
+            q_num = curr_idx + 1
+            questions = st.session_state.get("room_questions", [])
+            
+            if questions and curr_idx < len(questions):
+                q_item = questions[curr_idx]
+                target = q_item["target"]
+                options = q_item["options"]
+            else:
+                target = VOCAB_DATA[0]
+                options = [target["pinyin"]]
+                
+            st.subheader(f"Câu {q_num}/{total_q}:")
             st.markdown(f"<h1 style='text-align: center; font-size: 90px; color: #1E88E5;'>{target['char']}</h1>", unsafe_allow_html=True)
             play_audio_js(target['char'])
             
-            wrong_opts = [x["pinyin"] for x in VOCAB_DATA if x["pinyin"] != target["pinyin"]]
-            options = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target["pinyin"]]
-            random.shuffle(options)
+            ans = st.radio("Chọn phiên âm đúng:", options, key=f"rm_ans_radio_{curr_idx}")
             
-            ans = st.radio("Chọn phiên âm đúng:", options, key=f"rm_ans_{q_num}")
-            if st.button("Nộp câu này ➡️", key=f"rm_btn_{q_num}"):
+            if st.button("Nộp câu này ➡️", key=f"rm_btn_submit_{curr_idx}"):
                 if ans == target["pinyin"]:
                     st.session_state.room_score = st.session_state.get("room_score", 0) + 1
-                st.session_state.room_q_index = st.session_state.get("room_q_index", 0) + 1
+                st.session_state.room_q_index = curr_idx + 1
                 st.rerun()
 
 # LUỒNG KIỂM TRA CÁ NHÂN CỦ
