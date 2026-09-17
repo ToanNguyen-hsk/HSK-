@@ -3,13 +3,14 @@ import streamlit as st
 import random
 import pandas as pd
 import requests
+import json
 import streamlit.components.v1 as components
 
 # 1. Cấu hình trang web
 st.set_page_config(page_title="App Ôn Tập Từ Vựng HSK - MSUTONG 1 & 2", layout="centered")
 
-# URL Apps Script cá nhân của bạn
-GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxcnKRCCcd-iIkzspRGjS4jnwdCU3A25FwAVCBWlmJHMKT2le5kYd22O3i-V-fv3c0V/exec"
+# URL Apps Script mới nhất của bạn
+GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyFGBMkcRyOK1z_Hw7KEd3zSnJvnKQGxn-6MUnMwFyC4StagIWtbWqQe5MqgPkkqDb4/exec"
 
 st.markdown("""
     <style>
@@ -207,8 +208,8 @@ user_name = st.sidebar.text_input("Họ và tên (không bắt buộc):", placeh
 def update_online_status():
     if user_name and user_name.strip():
         try:
-            headers = {'Content-Type': 'application/json'}
-            requests.post(GOOGLE_SHEET_URL, json={"action": "ping_online", "name": user_name.strip()}, headers=headers, timeout=1.5)
+            url = f"{GOOGLE_SHEET_URL}?action=ping_online&name={requests.utils.quote(user_name.strip())}"
+            requests.get(url, timeout=1.5)
             res = requests.get(f"{GOOGLE_SHEET_URL}?action=get_online", timeout=1.5)
             return res.json()
         except Exception:
@@ -240,7 +241,7 @@ quiz_mode = st.sidebar.radio(
 
 start_button = st.sidebar.button("🚀 Bắt đầu kiểm tra", use_container_width=True)
 
-# --- SIDEBAR EXPANDER: PHÒNG THI MULTIPLAYER ---
+# --- SIDEBAR EXPANDER: PHÒNG THI MULTIPLAYER (GET METHOD CHUẨN TRÁNH LỖI) ---
 with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False):
     st.caption("Khởi tạo cuộc thi nhỏ cho mọi người cùng thi")
     host_mode = st.selectbox("Dạng bài thi:", ["Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa", "Dạng 4: Ghép nối câu từ Hán & Pinyin"])
@@ -248,18 +249,12 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
     host_time_limit = st.number_input("Thời gian (Phút):", min_value=1, max_value=60, value=3)
     
     if st.button("➕ Tạo Phòng Thi"):
-        payload = {
-            "action": "create_room",
-            "host": user_name.strip() if user_name.strip() else "Ẩn danh",
-            "lessons": selected_lessons,
-            "mode": host_mode,
-            "num_questions": host_num_questions,
-            "time_limit": host_time_limit
-        }
+        h_name = user_name.strip() if user_name.strip() else "Ẩn danh"
+        lessons_str = json.dumps(selected_lessons)
+        url = f"{GOOGLE_SHEET_URL}?action=create_room&host={requests.utils.quote(h_name)}&lessons={requests.utils.quote(lessons_str)}&mode={requests.utils.quote(host_mode)}&num_questions={host_num_questions}&time_limit={host_time_limit}"
         try:
-            headers = {'Content-Type': 'application/json'}
-            res = requests.post(GOOGLE_SHEET_URL, json=payload, headers=headers, timeout=2.5).json()
-            st.success(f"Phòng: **{res.get('roomId', 'ROOM_1')}**")
+            res = requests.get(url, timeout=2.5).json()
+            st.success(f"Tạo phòng thành công: **{res.get('roomId', 'ROOM_1')}**")
         except Exception:
             st.error("Chưa kết nối được máy chủ phòng!")
 
@@ -373,10 +368,9 @@ if start_button:
 def send_to_google_sheet(is_correct):
     name = user_name.strip() if user_name.strip() else "Ẩn danh"
     mode_clean = st.session_state.question["mode"].replace(":", " -")
-    payload = {"action": "submit_score", "name": name, "mode": mode_clean, "is_correct": 1 if is_correct else 0}
+    url = f"{GOOGLE_SHEET_URL}?action=submit_score&name={requests.utils.quote(name)}&mode={requests.utils.quote(mode_clean)}&is_correct={1 if is_correct else 0}"
     try:
-        headers = {'Content-Type': 'application/json'}
-        requests.post(GOOGLE_SHEET_URL, json=payload, headers=headers, timeout=2.5)
+        requests.get(url, timeout=2.0)
     except Exception:
         pass
 
