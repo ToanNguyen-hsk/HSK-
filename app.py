@@ -66,13 +66,32 @@ def fetch_data_from_google(action_name):
         pass
     return []
 
-# Tải dữ liệu ban đầu nếu chưa có
+# Thuật toán trích xuất số quyển và số bài để so sánh lỏng thông minh
+def extract_book_and_lesson(text):
+    if not text: return ("", "")
+    s = str(text).lower()
+    
+    # Xác định Quyển 1 hay Quyển 2
+    book = "q1" if ("1" in s or "quyển 1" in s or "quyen 1" in s) else ("q2" if ("2" in s or "quyển 2" in s or "quyen 2" in s) else "")
+    
+    # Tìm số bài (ví dụ: Bài 5 -> 5)
+    match = re.search(r'(?:bài|lesson|b|l)\s*(\d+)', s)
+    lesson_num = match.group(1) if match else ""
+    
+    if not lesson_num:
+        digits = re.findall(r'\d+', s)
+        if digits:
+            lesson_num = digits[-1]
+            
+    return (book, lesson_num)
+
+# Tải dữ liệu ban đầu
 if "vocab_data" not in st.session_state or not st.session_state.vocab_data:
     st.session_state.vocab_data = fetch_data_from_google("get_vocab")
 if "sentence_data" not in st.session_state or not st.session_state.sentence_data:
     st.session_state.sentence_data = fetch_data_from_google("get_sentences")
 
-# Tự động trích xuất danh sách bài học ĐANG CÓ TRÊN GOOGLE SHEET
+# Tạo danh sách bài học động
 raw_lessons = set()
 for item in st.session_state.vocab_data:
     if item.get("lesson"): raw_lessons.add(str(item.get("lesson")).strip())
@@ -89,11 +108,7 @@ DYNAMIC_LESSONS = sorted(list(raw_lessons)) if raw_lessons else [
     "Quyển 2 - Bài 9: 你见过熊猫吗?", "Quyển 2 - Bài 10: 给您添麻烦了!"
 ]
 
-def clean_key(s):
-    if not s: return ""
-    return re.sub(r'[^\w\s]', '', str(s)).replace(" ", "").lower()
-
-# Khởi tạo Session State
+# Khởi tạo state
 for k in ["score", "total", "q_id"]:
     if k not in st.session_state: st.session_state[k] = 0
 if "quiz_started" not in st.session_state: st.session_state.quiz_started = False
@@ -159,34 +174,41 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
                     st.session_state.room_q_index = 0
                     st.session_state.room_score = 0
                     
-                    normalized_selected = [clean_key(x) for x in selected_lessons]
-                    pool = [x for x in st.session_state.vocab_data if clean_key(x.get("lesson")) in normalized_selected]
-                    if not pool: pool = st.session_state.vocab_data
-                    
+                    pool = st.session_state.vocab_data
                     questions_deck = []
                     selected_targets = random.sample(pool, min(int(r_num), len(pool))) if pool else []
                     for tgt in selected_targets:
-                        wrong_opts = [x.get("pinyin") for x in st.session_state.vocab_data if x.get("pinyin") != tgt.get("pinyin")]
+                        wrong_opts = [x.get("pinyin") for x in pool if x.get("pinyin") != tgt.get("pinyin")]
                         opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt.get("pinyin")]
                         random.shuffle(opts)
                         questions_deck.append({"target": tgt, "options": opts})
                     st.session_state.room_questions = questions_deck
                     st.rerun()
 
+# Hàm kiểm tra trùng khớp bài học thông minh
+def is_lesson_match(item_lesson, selected_lessons_list):
+    item_bk, item_ls = extract_book_and_lesson(item_lesson)
+    for sel in selected_lessons_list:
+        sel_bk, sel_ls = extract_book_and_lesson(sel)
+        # Nếu trùng cả số quyển và số bài
+        if item_ls and sel_ls and item_ls == sel_ls:
+            if not item_bk or not sel_bk or item_bk == sel_bk:
+                return True
+        # Hoặc trùng chuỗi gốc
+        if str(item_lesson).strip() in str(sel).strip() or str(sel).strip() in str(item_lesson).strip():
+            return True
+    return False
+
 def new_question(mode_choice, lessons_choice):
     st.session_state.q_id += 1
     st.session_state.start_time = time.time()
     
-    normalized_selected = [clean_key(x) for x in lessons_choice]
+    vocab_pool = [i for i in st.session_state.vocab_data if is_lesson_match(i.get("lesson"), lessons_choice)]
+    sent_pool = [i for i in st.session_state.sentence_data if is_lesson_match(i.get("lesson"), lessons_choice)]
     
-    vocab_pool = [i for i in st.session_state.vocab_data if clean_key(i.get("lesson")) in normalized_selected]
-    sent_pool = [i for i in st.session_state.sentence_data if clean_key(i.get("lesson")) in normalized_selected]
-    
-    # Fallback nếu khớp lỏng
-    if not vocab_pool:
-        vocab_pool = [i for i in st.session_state.vocab_data if any(k in clean_key(i.get("lesson")) for k in normalized_selected)]
-    if not sent_pool:
-        sent_pool = [i for i in st.session_state.sentence_data if any(k in clean_key(i.get("lesson")) for k in normalized_selected)]
+    # Fallback nếu không lọc được bài cụ thể
+    if not vocab_pool: vocab_pool = st.session_state.vocab_data
+    if not sent_pool: sent_pool = st.session_state.sentence_data
 
     if "Dạng 4" in mode_choice:
         pool = sent_pool if sent_pool else st.session_state.sentence_data
@@ -216,6 +238,9 @@ def new_question(mode_choice, lessons_choice):
         }
 
 if start_button:
+    st.session_state.vocab_data = fetch_data_from_google("get_vocab")
+    st.session_state.sentence_data = fetch_data_from_google("get_sentences")
+    
     st.session_state.quiz_started = True
     st.session_state.in_room_exam = False
     st.session_state.active_mode = quiz_mode
@@ -304,8 +329,3 @@ else:
             if st.button("Câu tiếp theo ➡️"):
                 new_question(st.session_state.active_mode, st.session_state.active_lessons)
                 st.rerun()
-    elif st.session_state.quiz_started:
-        st.warning("⚠️ Không tìm thấy từ vựng thuộc bài học đã chọn trên Google Sheet!")
-        if st.button("Quay lại chọn bài học"):
-            st.session_state.quiz_started = False
-            st.rerun()
