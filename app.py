@@ -30,12 +30,14 @@ st.markdown("""
     .leaderboard-title {
         color: #1E88E5; font-size: 22px; font-weight: bold; margin-top: 15px; margin-bottom: 10px;
     }
-    /* Style cho các nút bấm chữ ghép câu */
-    div[data-testid="column"] button {
-        font-size: 24px !important;
+    /* Style phóng to các nút bấm ô chữ ghép câu Dạng 4 */
+    div[data-testid="column"] button p {
+        font-size: 32px !important;
         font-weight: bold !important;
-        height: 55px !important;
-        border-radius: 12px !important;
+    }
+    div[data-testid="column"] button {
+        height: 72px !important;
+        border-radius: 14px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -121,6 +123,17 @@ def is_lesson_selected(item_lesson, selected_lessons):
             if item_bk == sel_bk and item_ls == sel_ls:
                 return True
     return False
+
+# Cache danh sách phòng thi để loại bỏ độ trễ 3s trên mỗi lượt click
+@st.cache_data(ttl=15)
+def fetch_rooms_from_sheet():
+    try:
+        remote_response = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=1.5).json()
+        if isinstance(remote_response, list):
+            return [r for r in remote_response if isinstance(r, dict) and r.get("roomId")]
+    except Exception:
+        pass
+    return []
 
 # ==========================================
 # 📥 KHO DỮ LIỆU CƠ SỞ CHUẨN FULL (465 VOCAB & 129 SENTENCES)
@@ -859,11 +872,7 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
             
     st.write("---")
     st.markdown("**Danh Sách Phòng:**")
-    try:
-        remote_response = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=2.0).json()
-        valid_rooms = [r for r in remote_response if isinstance(r, dict) and r.get("roomId")] if isinstance(remote_response, list) else []
-    except Exception:
-        valid_rooms = []
+    valid_rooms = fetch_rooms_from_sheet()
         
     if not valid_rooms:
         st.caption("Chưa có phòng nào. Hãy nhấn 'Tạo Phòng Thi'!")
@@ -1093,7 +1102,7 @@ elif st.session_state.get("question"):
     elif q["mode"] == 3:
         correct_ans_display = f"{q['target']['meaning']} ({q['target']['pinyin']})"
 
-    # --- DẠNG 4: GHÉP CÂU HỘI THOẠI (DÙNG CÁC NÚT BẤM CÁC THẺ CHỮ TRỰC TIẾP) ---
+    # --- DẠNG 4: GHÉP CÂU HỘI THOẠI ---
     if q.get("mode") == 4:
         st.subheader("🧩 Bài Tập Ghép Câu Hội Thoại")
         st.markdown(f"### 💡 **Ý nghĩa:** `{q['meaning']}`")
@@ -1105,7 +1114,7 @@ elif st.session_state.get("question"):
         display_str = user_sentence_str if user_sentence_str else "..."
         st.markdown(f"<div style='background-color: #F1F8E9; padding: 12px 16px; border-radius: 10px; border: 2px solid #C8E6C9; margin-bottom: 12px;'><span style='font-size: 18px; color: #555;'>Thứ tự câu bạn ghép:</span> <br><span style='font-size: 28px; font-weight: bold; color: #2E7D32;'>{display_str}</span></div>", unsafe_allow_html=True)
         
-        # HIỂN THỊ CÁC NÚT THẺ CHỮ TRỰC TIẾP ĐỂ BẤM CHỌN
+        # HIỂN THỊ CÁC NÚT BẤM CÁC THẺ CHỮ TRỰC TIẾP
         st.markdown("**Click trực tiếp vào các từ/chữ dưới đây theo thứ tự:**")
         num_words = len(q["shuffled_words"])
         cols = st.columns(min(num_words, 8))
@@ -1117,13 +1126,19 @@ elif st.session_state.get("question"):
                 st.session_state[word_state_key].append(idx)
                 st.rerun()
 
-        # NÚT RESET LÀM LẠI TỪ ĐẦU NẾU CHỌN NHẦM
+        # NÚT XÓA CHỮ VỪA CHỌN VÀ NÚT CHỌN LẠI TỪ ĐẦU
         if selected_indices and not has_answered:
-            if st.button("🔄 Chọn lại từ đầu", key=f"reset_w_{st.session_state.q_id}"):
-                st.session_state[word_state_key] = []
-                st.rerun()
+            c_undo, c_reset = st.columns(2)
+            with c_undo:
+                if st.button("⌫ Xóa chữ vừa chọn", key=f"undo_w_{st.session_state.q_id}", use_container_width=True):
+                    st.session_state[word_state_key].pop()
+                    st.rerun()
+            with c_reset:
+                if st.button("🔄 Chọn lại từ đầu", key=f"reset_w_{st.session_state.q_id}", use_container_width=True):
+                    st.session_state[word_state_key] = []
+                    st.rerun()
 
-        # TỰ ĐỘNG CHẤM ĐIỂM KHIN CHỌN ĐỦ TOÀN BỘ CÁC CHỮ
+        # TỰ ĐỘNG CHẤM ĐIỂM KHI CHỌN ĐỦ TOÀN BỘ CÁC CHỮ
         if len(selected_indices) == num_words and not has_answered:
             st.session_state.total += 1
             is_correct = (user_sentence_str == q["correct_sentence"])
@@ -1143,7 +1158,7 @@ elif st.session_state.get("question"):
                 new_question(st.session_state.active_mode, st.session_state.active_lessons)
                 st.rerun()
 
-        # TH2: CHƯA TRẢ LỜI -> HIỂN THỊ TIMER VÀ NÚT ĐIỀU HƯỚNG
+        # TH2: CHƯA TRẢ LỜI -> BẤM SANG CÂU TIẾP THEO MỌI LÚC
         else:
             render_js_timer(remaining, st.session_state.q_id, correct_ans_display)
             if st.button("Sang câu tiếp theo ➡️", key=f"timeout_sent_next_{st.session_state.q_id}", use_container_width=True):
