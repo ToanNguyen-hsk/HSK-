@@ -60,9 +60,10 @@ def play_audio_js(text):
     """
     components.html(js_code, height=0, width=0)
 
-# Đồng hồ đếm ngược JS
-def render_js_timer(seconds, key_id, correct_ans_display):
+# Đồng hồ đếm ngược JS tự phát âm thanh khi về 0s
+def render_js_timer(seconds, key_id, correct_ans_display, tts_text=""):
     clean_ans = str(correct_ans_display).replace("'", "\\'").replace('"', '\\"').replace("\n", " ").strip()
+    clean_tts = str(tts_text).replace("'", "\\'").replace('"', '\\"').replace("\n", " ").strip()
     js_timer_code = f"""
     <div id="timer-box-{key_id}" style="
         font-size: 20px; 
@@ -91,6 +92,16 @@ def render_js_timer(seconds, key_id, correct_ans_display):
                     box.style.borderColor = "#FFE0B2";
                     box.style.color = "#E65100";
                     box.innerHTML = "⏰ <b>Đã hết thời gian làm câu này!</b><br><span style='font-size: 17px; color: #2E7D32;'>💡 Đáp án đúng: <b>{clean_ans}</b></span>";
+                    if ("{clean_tts}" !== "") {{
+                        try {{
+                            var synth = window.parent.speechSynthesis || window.speechSynthesis;
+                            if (synth) {{
+                                synth.cancel();
+                                var msg = new SpeechSynthesisUtterance("{clean_tts}");
+                                msg.lang = "zh-CN"; msg.rate = 0.85; synth.speak(msg);
+                            }}
+                        }} catch(e) {{}}
+                    }}
                 }} else {{
                     elem.innerHTML = timeLeft;
                 }}
@@ -134,7 +145,7 @@ def fetch_rooms_from_sheet():
     return []
 
 # ==========================================
-# 📥 KHO DỮ LIỆU CƠ SỞ CHUẨN FULL (ĐÃ LÀM SẠCH KÝ TỰ RÁC)
+# 📥 KHO DỮ LIỆU CƠ SỞ CHUẨN FULL
 # ==========================================
 FULL_VOCAB = [
     # Quyển 1 - Bài 1
@@ -891,14 +902,14 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
                 for _ in range(int(r_num)):
                     tgt = random.choice(pool)
                     if "Dạng 1" in r_mode:
-                        wrong_opts = [x.get("pinyin").strip() for x in pool if x.get("pinyin").strip() != tgt.get("pinyin").strip()]
-                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt.get("pinyin").strip()]
+                        wrong_opts = [str(x.get("pinyin", "")).strip() for x in pool if str(x.get("pinyin", "")).strip() != str(tgt.get("pinyin", "")).strip()]
+                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("pinyin", "")).strip()]
                     elif "Dạng 2" in r_mode:
-                        wrong_opts = [x.get("char").strip() for x in pool if x.get("char").strip() != tgt.get("char").strip()]
-                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt.get("char").strip()]
+                        wrong_opts = [str(x.get("char", "")).strip() for x in pool if str(x.get("char", "")).strip() != str(tgt.get("char", "")).strip()]
+                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("char", "")).strip()]
                     else:
-                        wrong_opts = [x.get("meaning").strip() for x in pool if x.get("meaning").strip() != tgt.get("meaning").strip()]
-                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [tgt.get("meaning").strip()]
+                        wrong_opts = [str(x.get("meaning", "")).strip() for x in pool if str(x.get("meaning", "")).strip() != str(tgt.get("meaning", "")).strip()]
+                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("meaning", "")).strip()]
                         
                     random.shuffle(opts)
                     questions_deck.append({"target": tgt, "options": opts, "mode": r_mode})
@@ -1094,15 +1105,19 @@ elif st.session_state.get("question"):
     timer_limit = st.session_state.get("active_timer", 15)
     remaining = max(0, int(timer_limit - elapsed))
 
-    # TÍNH CHUỖI HIỂN THỊ ĐÁP ÁN CHUẨN (KÈM DỊCH NGHĨA TIẾNG VIỆT CHO TẤT CẢ CÁC DẠNG)
+    # TÍNH CHUỖI HIỂN THỊ ĐÁP ÁN CHUẨN (KÈM DỊCH NGHĨA TIẾNG VIỆT FOR ALL MODES)
     if q.get("mode") == 4:
         correct_ans_display = f"{q['full_target']} ({q['meaning']})"
+        tts_target_text = q["full_target"]
     elif q["mode"] == 1:
         correct_ans_display = f"{q['target']['pinyin']} ({q['target']['meaning']})"
+        tts_target_text = q["target"]["char"]
     elif q["mode"] == 2:
         correct_ans_display = f"{q['target']['char']} ({q['target']['meaning']})"
+        tts_target_text = q["target"]["char"]
     elif q["mode"] == 3:
         correct_ans_display = f"{q['target']['meaning']} ({q['target']['pinyin']})"
+        tts_target_text = q["target"]["char"]
 
     # --- DẠNG 4: GHÉP CÂU HỘI THOẠI ---
     if q.get("mode") == 4:
@@ -1162,16 +1177,17 @@ elif st.session_state.get("question"):
                 play_audio_js(q["full_target"])
             else:
                 st.error(f"❌ Chưa đúng rồi! Đáp án chuẩn: **{q['full_target']}** ({q['meaning']})")
+                play_audio_js(q["full_target"])
             
             if st.button("Câu tiếp theo ➡️", key=f"sent_next_{st.session_state.q_id}", use_container_width=True):
                 new_question(st.session_state.active_mode, st.session_state.active_lessons)
                 st.rerun()
 
-        # TH2: CHƯA TRẢ LỜI -> HIỂN THỊ TIMER (NẾU HẾT GIỜ SẼ PHÁT ÂM CÂU ĐÚNG)
+        # TH2: CHƯA TRẢ LỜI -> HIỂN THỊ TIMER (TỰ ĐỘNG ĐỌC CÂU ĐÚNG KHI HẾT GIỜ)
         else:
             if remaining <= 0:
                 play_audio_js(q["full_target"])
-            render_js_timer(remaining, st.session_state.q_id, correct_ans_display)
+            render_js_timer(remaining, st.session_state.q_id, correct_ans_display, tts_text=q["full_target"])
             if st.button("Sang câu tiếp theo ➡️", key=f"timeout_sent_next_{st.session_state.q_id}", use_container_width=True):
                 new_question(st.session_state.active_mode, st.session_state.active_lessons)
                 st.rerun()
@@ -1202,7 +1218,9 @@ elif st.session_state.get("question"):
 
         # TH2: Chưa chọn đáp án
         else:
-            render_js_timer(remaining, st.session_state.q_id, correct_ans_display)
+            if remaining <= 0:
+                play_audio_js(tts_target_text)
+            render_js_timer(remaining, st.session_state.q_id, correct_ans_display, tts_text=tts_target_text)
             user_choice = st.radio("Chọn đáp án:", q["options"], index=None, key=f"radio_{st.session_state.q_id}")
             
             if user_choice is not None:
