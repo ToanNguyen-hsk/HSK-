@@ -1072,7 +1072,7 @@ elif st.session_state.get("question"):
     timer_limit = st.session_state.get("active_timer", 15)
     remaining = max(0, int(timer_limit - elapsed))
 
-    # TÍNH CHUỖI HIỂN THỊ ĐÁP ÁN CHUẨN (KÈM DỊCH NGHĨA TIẾNG VIỆT FOR ALL MODES)
+    # TÍNH CHUỖI HIỂN THỊ ĐÁP ÁN CHUẨN (KÈM DỊCH NGHĨA TIẾNG VIỆT CHO TẤT CẢ DẠNG BÀI)
     if q.get("mode") == 4:
         correct_ans_display = f"{q['full_target']} ({q['meaning']})"
     elif q["mode"] == 1:
@@ -1086,9 +1086,14 @@ elif st.session_state.get("question"):
     if q.get("mode") == 4:
         st.subheader("🧩 Bài Tập Ghép Câu Hội Thoại")
         st.markdown(f"### 💡 **Ý nghĩa:** `{q['meaning']}`")
-        st.caption("Chọn lần lượt từng từ để xếp thành câu đúng:")
         
-        user_selection = st.multiselect("Thứ tự câu ghép:", options=q["shuffled_words"], key=f"sent_{st.session_state.q_id}")
+        # HIỂN THỊ CÁC THẺ CHỮ XÁO TRỘN RÕ RÀNG BẰNG KHUNG THẺ NỔI BẬT
+        st.markdown("**Các chữ / từ cần ghép:**")
+        chips_html = " ".join([f"<span style='background-color: #E3F2FD; color: #0D47A1; padding: 8px 16px; border-radius: 12px; font-size: 24px; font-weight: bold; margin: 4px; display: inline-block; border: 2px solid #90CAF9;'>{w}</span>" for w in q["shuffled_words"]])
+        st.markdown(f"<div style='margin-bottom: 12px;'>{chips_html}</div>", unsafe_allow_html=True)
+        
+        st.caption("Chọn lần lượt từng từ theo thứ tự để xếp thành câu đúng:")
+        user_selection = st.multiselect("Thứ tự câu ghép:", options=q["shuffled_words"], placeholder="Bấm vào đây để chọn chữ theo thứ tự...", key=f"sent_{st.session_state.q_id}")
         
         if len(user_selection) == len(q["correct_sentence"]) and not has_answered:
             st.session_state.total += 1
@@ -1109,16 +1114,10 @@ elif st.session_state.get("question"):
                 new_question(st.session_state.active_mode, st.session_state.active_lessons)
                 st.rerun()
         else:
-            if remaining <= 0:
-                st.error("⏰ Hết thời gian làm câu này!")
-                st.warning(f"💡 Đáp án đúng là: **{correct_ans_display}**")
-                play_audio_js(q['full_target'])
-                
-                if st.button("Sang câu tiếp theo ➡️", key=f"timeout_sent_next_{st.session_state.q_id}", use_container_width=True):
-                    new_question(st.session_state.active_mode, st.session_state.active_lessons)
-                    st.rerun()
-            else:
-                render_js_timer(remaining, st.session_state.q_id, correct_ans_display)
+            render_js_timer(remaining, st.session_state.q_id, correct_ans_display)
+            if st.button("Sang câu tiếp theo ➡️", key=f"timeout_sent_next_{st.session_state.q_id}", use_container_width=True):
+                new_question(st.session_state.active_mode, st.session_state.active_lessons)
+                st.rerun()
 
     # --- DẠNG 1, 2, 3: TRẮC NGHIỆM ---
     else:
@@ -1145,25 +1144,19 @@ elif st.session_state.get("question"):
 
         # TH2: Chưa chọn đáp án
         else:
-            if remaining <= 0:
-                st.error("⏰ Hết thời gian làm câu này!")
-                st.warning(f"💡 Đáp án đúng là: **{correct_ans_display}**")
-                if q['target'].get('char'):
-                    play_audio_js(q['target']['char'])
-                
-                if st.button("Sang câu tiếp theo ➡️", key=f"timeout_next_{st.session_state.q_id}", use_container_width=True):
-                    new_question(st.session_state.active_mode, st.session_state.active_lessons)
-                    st.rerun()
-            else:
-                render_js_timer(remaining, st.session_state.q_id, correct_ans_display)
-                user_choice = st.radio("Chọn đáp án:", q["options"], index=None, key=f"radio_{st.session_state.q_id}")
-                
-                if user_choice is not None:
-                    st.session_state.total += 1
-                    is_correct = (user_choice == q["correct_ans"])
-                    st.session_state.score += (1 if is_correct else 0)
-                    st.session_state[score_flag_key] = is_correct
-                    st.rerun()
+            render_js_timer(remaining, st.session_state.q_id, correct_ans_display)
+            user_choice = st.radio("Chọn đáp án:", q["options"], index=None, key=f"radio_{st.session_state.q_id}")
+            
+            if user_choice is not None:
+                st.session_state.total += 1
+                is_correct = (user_choice == q["correct_ans"])
+                st.session_state.score += (1 if is_correct else 0)
+                st.session_state[score_flag_key] = is_correct
+                st.rerun()
+
+            if st.button("Sang câu tiếp theo ➡️", key=f"timeout_next_{st.session_state.q_id}", use_container_width=True):
+                new_question(st.session_state.active_mode, st.session_state.active_lessons)
+                st.rerun()
 
     # --- NÚT KẾT THÚC BÀI KIỂM TRA ĐẶT BIỆT LẬP Ở DƯỚI CÙNG TRANG ---
     st.divider()
