@@ -127,35 +127,38 @@ def is_lesson_selected(item_lesson, selected_lessons):
                 return True
     return False
 
-# Lấy danh sách phòng từ Server Google Sheet
+# Lấy danh sách phòng từ Server
+@st.cache_data(ttl=5)
 def fetch_rooms_from_sheet():
     try:
-        remote_response = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=3.0).json()
+        remote_response = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=2.5).json()
         if isinstance(remote_response, list):
             return [r for r in remote_response if isinstance(r, dict) and r.get("roomId")]
     except Exception:
         pass
     return []
 
-# Lấy kết quả điểm phòng thi từ Server Google Sheet
+# Lấy điểm số các người chơi trong phòng
 def fetch_room_results_from_sheet(room_id):
     try:
-        remote_response = requests.get(GOOGLE_SHEET_URL, params={"action": "get_room_results", "roomId": str(room_id)}, timeout=3.0).json()
+        remote_response = requests.get(GOOGLE_SHEET_URL, params={"action": "get_room_results", "roomId": str(room_id)}, timeout=2.5).json()
         if isinstance(remote_response, list):
             return remote_response
     except Exception:
         pass
     return []
 
-# Lấy trạng thái phòng thi (Đang chạy hay Đã dừng)
+# Lấy trạng thái phòng (WAITING / STARTED / STOPPED)
 def check_room_status(room_id):
+    if f"room_status_{room_id}" in st.session_state:
+        return st.session_state[f"room_status_{room_id}"]
     try:
         res = requests.get(GOOGLE_SHEET_URL, params={"action": "check_room_status", "roomId": str(room_id)}, timeout=2.0).json()
-        if isinstance(res, dict):
-            return res.get("status", "ACTIVE")
+        if isinstance(res, dict) and "status" in res:
+            return res.get("status")
     except Exception:
         pass
-    return "ACTIVE"
+    return "WAITING"
 
 DYNAMIC_LESSONS = [
     "Quyển 1 - Bài 1: 你好", "Quyển 1 - Bài 2: 你叫什么名字?", "Quyển 1 - Bài 3: 很高兴认识你",
@@ -198,13 +201,13 @@ quiz_mode = st.sidebar.radio(
 time_per_question = st.sidebar.slider("⏱️ Thời gian mỗi câu (giây):", min_value=5, max_value=60, value=15)
 start_button = st.sidebar.button("🚀 Bắt đầu kiểm tra", use_container_width=True)
 
-# --- 2. KHU VỰC PHÒNG THI NHÓM (MÃ THUẦN SỐ) ---
+# --- 2. KHU VỰC PHÒNG THI NHÓM ---
 with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True):
     st.caption("Khởi tạo hoặc gia nhập cuộc thi nhóm")
     
-    # A. NHẬP MÃ PHÒNG SỐ
+    # A. NHẬP MÃ PHÒNG SỐ TRỰC TIẾP
     st.markdown("**1. Nhập mã phòng số để gia nhập:**")
-    join_code_raw = st.text_input("🔑 Mã phòng (chỉ nhập số):", placeholder="VD: 8736", key="join_code_input").strip()
+    join_code_raw = st.text_input("🔑 Mã phòng số:", placeholder="VD: 8736", key="join_code_input").strip()
     join_code_digits = re.sub(r'\D', '', join_code_raw)
     
     if st.button("🚪 Gia nhập phòng này", use_container_width=True):
@@ -235,14 +238,14 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
 
     st.write("---")
     
-    # B. TẠO PHÒNG MỚI CHỈ DÙNG MÃ SỐ
+    # B. TẠO PHÒNG MỚI MÃ SỐ
     st.markdown("**2. Hoặc tạo phòng thi mới:**")
     host_mode = st.selectbox("Dạng bài thi:", ["Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa"])
     host_num_questions = st.number_input("Số lượng câu:", min_value=3, max_value=20, value=5)
     
     if st.button("➕ Tạo Phòng Thi", use_container_width=True):
         h_name = user_name.strip() if user_name.strip() else "Ẩn danh"
-        new_room_num = str(random.randint(1000, 9999)) # Tạo mã số 4 chữ số
+        new_room_num = str(random.randint(1000, 9999))
         new_rm = {
             "roomId": new_room_num,
             "host": h_name,
@@ -251,24 +254,27 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
         }
         st.session_state.local_rooms.insert(0, new_rm)
         st.session_state.is_host = True
+        st.session_state[f"room_status_{new_room_num}"] = "WAITING"
         
         try:
-            params = {"action": "create_room", "roomId": new_room_num, "host": h_name, "lessons": json.dumps(selected_lessons), "mode": host_mode, "num_questions": host_num_questions}
-            requests.get(GOOGLE_SHEET_URL, params=params, timeout=2.5)
+            params = {"action": "create_room", "roomId": new_room_num, "host": h_name, "lessons": json.dumps(selected_lessons), "mode": host_mode, "num_questions": host_num_questions, "status": "WAITING"}
+            requests.get(GOOGLE_SHEET_URL, params=params, timeout=2.0)
         except Exception:
             pass
             
-        st.success(f"🎉 Tạo thành công! Mã phòng của bạn: **{new_room_num}**")
+        st.cache_data.clear()
+        st.success(f"🎉 Tạo thành công! Mã phòng số: **{new_room_num}**")
         st.rerun()
 
     st.write("---")
     
-    # C. DANH SÁCH PHÒNG + NÚT RELOAD
+    # C. DANH SÁCH PHÒNG VÀ NÚT RELOAD ĐÃ SỬA LỖI CACHE
     col_lbl, col_ref = st.columns([2, 1])
     with col_lbl:
         st.markdown("**3. Danh sách phòng:**")
     with col_ref:
-        if st.button("🔄 Reload", key="btn_refresh_rooms", help="Tải lại danh sách"):
+        if st.button("🔄 Reload", key="btn_refresh_rooms", help="Xóa cache & Tải lại phòng mới nhất"):
+            st.cache_data.clear() # XÓA BỘ NHỚ TẠM ĐỂ KÉO PHÒNG TỪ CÁC THIẾT BỊ KHÁC VỀ
             st.rerun()
 
     remote_rooms = fetch_rooms_from_sheet()
@@ -276,7 +282,7 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
     valid_rooms = st.session_state.local_rooms + [r for r in remote_rooms if str(r.get("roomId")) not in local_ids]
         
     if not valid_rooms:
-        st.caption("Chưa thấy phòng trong danh sách. Hãy nhập mã phòng số ở mục 1!")
+        st.caption("Chưa thấy phòng trong danh sách. Bấm 'Reload' hoặc dùng ô Nhập Mã Phòng Số ở trên!")
     else:
         for idx, rm in enumerate(valid_rooms):
             r_id = str(rm.get("roomId", ""))
@@ -290,7 +296,6 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True)
                 st.session_state.room_score = 0
                 st.session_state.quiz_history = []
                 
-                # Seed bằng mã phòng để ra câu hỏi đồng bộ 100%
                 seed_val = int(re.sub(r'\D', '', r_id)) if re.sub(r'\D', '', r_id) else 1234
                 rng = random.Random(seed_val)
                 
@@ -386,30 +391,27 @@ if st.session_state.get("quiz_finished", False):
     
     st.metric(label="📊 Điểm số chung cuộc", value=f"{score_q} / {total_q} câu đúng", delta=f"{ratio}% Tỷ lệ chính xác")
     
-    # 📌 BẢNG XEM LẠI CHI TIẾT TỪNG CÂU (BIẾT SAI Ở ĐÂU)
+    # BẢNG XEM LẠI CHI TIẾT TỪNG CÂU
     if st.session_state.get("quiz_history"):
         st.write("---")
         st.markdown("<div class='leaderboard-title'>📋 BẢNG TỔNG HỢP CHI TIẾT CÂU LÀM (XEM LỖI SAI)</div>", unsafe_allow_html=True)
         df_history = pd.DataFrame(st.session_state.quiz_history)
         st.dataframe(df_history, use_container_width=True, hide_index=True)
 
-    # 📌 TÍNH NĂNG THI NHÓM: BIỂU ĐỒ & BẢNG ĐIỂM TỔNG HỢP CÁC NGƯỜI CHƠI KHÁC
+    # THI NHÓM: BIỂU ĐỒ & BẢNG ĐIỂM TỔNG HỢP VỚI NÚT RELOAD
     if st.session_state.get("in_room_exam", False) or st.session_state.get("room_info"):
-        rm_id = st.session_state.get("room_info", {}).get("roomId", "")
+        rm_id = str(st.session_state.get("room_info", {}).get("roomId", ""))
         st.write("---")
         st.markdown(f"<div class='leaderboard-title'>🏆 BẢNG KẾT QUẢ THI ĐẤU PHÒNG {rm_id}</div>", unsafe_allow_html=True)
         
-        c_rel, c_chart = st.columns([2, 1])
-        with c_rel:
-            if st.button("🔄 Reload Kết Quả Phòng Thi", key="btn_reload_room_results", use_container_width=True):
-                st.rerun()
+        if st.button("🔄 Reload Kết Quả Phòng Thi (Cập nhật điểm người chơi khác)", key="btn_reload_room_results", use_container_width=True):
+            st.rerun()
                 
         results_data = fetch_room_results_from_sheet(rm_id)
         if results_data:
             df_rm = pd.DataFrame(results_data)
             st.dataframe(df_rm, use_container_width=True, hide_index=True)
             
-            # BIỂU ĐỒ CỘT SO SÁNH ĐIỂM SỐ CÁC NGƯỜI CHƠI
             try:
                 chart_df = df_rm[["Tên người chơi", "Điểm số"]].set_index("Tên người chơi")
                 st.bar_chart(chart_df)
@@ -470,81 +472,109 @@ if st.session_state.get("quiz_finished", False):
         st.session_state.in_room_exam = False
         st.rerun()
 
-# --- GIAO DIỆN LÀM BÀI PHÒNG THI NHÓM ---
+# ==========================================
+# 🎮 GIAO DIỆN LÀM BÀI PHÒNG THI NHÓM (CÓ MÀN HÌNH CHỜ & NÚT HOST BẮT ĐẦU)
+# ==========================================
 elif st.session_state.get("in_room_exam", False):
     rm_info = st.session_state.get("room_info", {})
     rm_id = str(rm_info.get("roomId", ""))
+    is_host = st.session_state.get("is_host", False)
     
-    # KIỂM TRA XEM HOST ĐÃ BẤM DỪNG PHÒNG THI CHƯA
+    # 1. Kiểm tra trạng thái phòng từ Server
     curr_status = check_room_status(rm_id)
+    
+    # Nếu Host đã bấm dừng -> Lập tức khóa làm bài và đẩy sang màn hình tổng kết
     if curr_status == "STOPPED":
         st.warning("🛑 Host đã dừng bài thi phòng này! Đang chuyển sang màn hình tổng kết...")
         time.sleep(1.0)
         st.session_state.quiz_finished = True
         st.rerun()
+
+    st.info(f"🏆 **PHÒNG THI NHÓM MULTIPLAYER** | Mã Phòng: **{rm_id}**")
+
+    # 2. TRẠNG THÁI WAITING: MÀN HÌNH CHỜ HOST BẤM "BẮT ĐẦU BÀI THI"
+    if curr_status == "WAITING":
+        if is_host:
+            st.warning("⏳ Phòng đã tạo thành công! Hãy gửi Mã Phòng Số cho các bạn thi.")
+            st.markdown(f"### Mã phòng số: <span style='color:#D32F2F; font-size:40px; font-weight:bold;'>{rm_id}</span>", unsafe_allow_html=True)
+            st.caption("Khi tất cả các bạn thi đã nhập mã phòng, nhấn nút bên dưới để bắt đầu làm bài cùng lúc:")
+            
+            if st.button("🚀 BẮT ĐẦU BÀI THI PHÒNG (Cho tất cả)", use_container_width=True, type="primary"):
+                st.session_state[f"room_status_{rm_id}"] = "STARTED"
+                try:
+                    requests.get(GOOGLE_SHEET_URL, params={"action": "update_room_status", "roomId": rm_id, "status": "STARTED"}, timeout=2.0)
+                except Exception:
+                    pass
+                st.rerun()
+        else:
+            st.warning(f"⏳ Đã vào phòng **{rm_id}**! Đang chờ Host bấm Bắt đầu bài thi...")
+            st.caption("Màn hình làm bài sẽ tự động mở ra ngay khi Host bấm Bắt đầu.")
+            if st.button("🔄 Kiểm tra trạng thái phòng (Refresh)", use_container_width=True):
+                st.rerun()
+            time.sleep(2)
+            st.rerun() # Tự động reload kiểm tra nếu Host đã bấm mở
+
+    # 3. TRẠNG THÁI STARTED: HIỂN THỊ CÂU HỎI THI ĐẤU
+    else:
+        if is_host:
+            if st.button("🛑 Dừng bài thi phòng (Tất cả người chơi)", key="btn_host_stop"):
+                st.session_state[f"room_status_{rm_id}"] = "STOPPED"
+                try:
+                    requests.get(GOOGLE_SHEET_URL, params={"action": "update_room_status", "roomId": rm_id, "status": "STOPPED"}, timeout=2.0)
+                except Exception:
+                    pass
+                st.session_state.quiz_finished = True
+                st.rerun()
+                
+        curr_idx = st.session_state.get("room_q_index", 0)
+        total_q = int(rm_info.get("numQ", 5))
+        questions = st.session_state.get("room_questions", [])
         
-    st.info(f"🏆 **ĐANG THI NHÓM MULTIPLAYER** | Mã Phòng: **{rm_id}**")
-    
-    # NÚT DỪNG DÀNH CHO HOST
-    if st.session_state.get("is_host", False):
-        if st.button("🛑 Dừng bài thi phòng (Cho tất cả người chơi)", key="btn_host_stop"):
-            try:
-                requests.get(GOOGLE_SHEET_URL, params={"action": "stop_room", "roomId": rm_id}, timeout=2.0)
-            except Exception:
-                pass
+        if curr_idx >= total_q or not questions:
+            st.balloons()
+            st.success("🎉 CẢM ƠN BẠN ĐÃ HOÀN THÀNH CUỘC THI NHÓM!")
             st.session_state.quiz_finished = True
             st.rerun()
-            
-    curr_idx = st.session_state.get("room_q_index", 0)
-    total_q = int(rm_info.get("numQ", 5))
-    questions = st.session_state.get("room_questions", [])
-    
-    if curr_idx >= total_q or not questions:
-        st.balloons()
-        st.success("🎉 CẢM ƠN BẠN ĐÃ HOÀN THÀNH CUỘC THI NHÓM!")
-        st.session_state.quiz_finished = True
-        st.rerun()
-    else:
-        st.subheader(f"Câu {curr_idx + 1}/{total_q}:")
-        q_item = questions[curr_idx]
-        target, options, r_mode = q_item["target"], q_item["options"], q_item["mode"]
-        
-        if "Dạng 1" in r_mode:
-            st.markdown(f"<h1 style='text-align: center; font-size: 90px; color: #1E88E5;'>{target.get('char')}</h1>", unsafe_allow_html=True)
-            play_audio_js(target.get('char'))
-            correct_ans = f"{target.get('pinyin')} ({target.get('meaning', '')})"
-        elif "Dạng 2" in r_mode:
-            st.markdown(f"<h1 style='text-align: center; font-size: 70px; color: #1E88E5;'>{target.get('pinyin')}</h1>", unsafe_allow_html=True)
-            play_audio_js(target.get('char'))
-            correct_ans = f"{target.get('char')} ({target.get('meaning', '')})"
         else:
-            st.markdown(f"<h1 style='text-align: center; font-size: 80px; color: #1E88E5;'>{target.get('char')}</h1>", unsafe_allow_html=True)
-            play_audio_js(target.get('char'))
-            st.markdown(f"<h3 style='text-align: center; color: #666;'>{target.get('pinyin')}</h3>", unsafe_allow_html=True)
-            correct_ans = f"{target.get('meaning')} ({target.get('pinyin', '')})"
-        
-        ans = st.radio("Chọn đáp án:", options, index=None, key=f"rm_ans_{curr_idx}")
-        if ans is not None:
-            ans_clean = str(ans).strip()
-            is_correct = (ans_clean in correct_ans or correct_ans.startswith(ans_clean))
+            st.subheader(f"Câu {curr_idx + 1}/{total_q}:")
+            q_item = questions[curr_idx]
+            target, options, r_mode = q_item["target"], q_item["options"], q_item["mode"]
             
-            if is_correct: 
-                st.session_state.room_score += 1
-                st.success(f"🎉 Chính xác! **{correct_ans}**")
+            if "Dạng 1" in r_mode:
+                st.markdown(f"<h1 style='text-align: center; font-size: 90px; color: #1E88E5;'>{target.get('char')}</h1>", unsafe_allow_html=True)
+                play_audio_js(target.get('char'))
+                correct_ans = f"{target.get('pinyin')} ({target.get('meaning', '')})"
+            elif "Dạng 2" in r_mode:
+                st.markdown(f"<h1 style='text-align: center; font-size: 70px; color: #1E88E5;'>{target.get('pinyin')}</h1>", unsafe_allow_html=True)
+                play_audio_js(target.get('char'))
+                correct_ans = f"{target.get('char')} ({target.get('meaning', '')})"
             else:
-                st.error(f"❌ Sai rồi! Đáp án đúng: **{correct_ans}**")
+                st.markdown(f"<h1 style='text-align: center; font-size: 80px; color: #1E88E5;'>{target.get('char')}</h1>", unsafe_allow_html=True)
+                play_audio_js(target.get('char'))
+                st.markdown(f"<h3 style='text-align: center; color: #666;'>{target.get('pinyin')}</h3>", unsafe_allow_html=True)
+                correct_ans = f"{target.get('meaning')} ({target.get('pinyin', '')})"
+            
+            ans = st.radio("Chọn đáp án:", options, index=None, key=f"rm_ans_{curr_idx}")
+            if ans is not None:
+                ans_clean = str(ans).strip()
+                is_correct = (ans_clean in correct_ans or correct_ans.startswith(ans_clean))
                 
-            # Ghi lịch sử
-            st.session_state.quiz_history.append({
-                "Câu hỏi": target.get("char") or target.get("pinyin"),
-                "Bạn chọn": ans_clean,
-                "Đáp án đúng": correct_ans,
-                "Kết quả": "✅ Đúng" if is_correct else "❌ Sai"
-            })
-                
-            if st.button("Câu tiếp theo ➡️"):
-                st.session_state.room_q_index += 1
-                st.rerun()
+                if is_correct: 
+                    st.session_state.room_score += 1
+                    st.success(f"🎉 Chính xác! **{correct_ans}**")
+                else:
+                    st.error(f"❌ Sai rồi! Đáp án đúng: **{correct_ans}**")
+                    
+                st.session_state.quiz_history.append({
+                    "Câu hỏi": target.get("char") or target.get("pinyin"),
+                    "Bạn chọn": ans_clean,
+                    "Đáp án đúng": correct_ans,
+                    "Kết quả": "✅ Đúng" if is_correct else "❌ Sai"
+                })
+                    
+                if st.button("Câu tiếp theo ➡️"):
+                    st.session_state.room_q_index += 1
+                    st.rerun()
 
 # --- GIAO DIỆN LÀM BÀI CÁ NHÂN ---
 elif not st.session_state.quiz_started:
@@ -563,7 +593,6 @@ elif st.session_state.get("question"):
     timer_limit = st.session_state.get("active_timer", 15)
     remaining = max(0, int(timer_limit - elapsed))
 
-    # TÍNH CHUỖI HIỂN THỊ ĐÁP ÁN CHUẨN
     if q.get("mode") == 4:
         correct_ans_display = f"{q['full_target']} ({q['meaning']})"
         tts_target_text = q["full_target"]
@@ -626,7 +655,6 @@ elif st.session_state.get("question"):
             st.session_state.score += (1 if is_correct else 0)
             st.session_state[score_flag_key] = is_correct
             
-            # Ghi lịch sử làm bài
             st.session_state.quiz_history.append({
                 "Câu hỏi": q['meaning'],
                 "Bạn chọn": user_sentence_str,
@@ -708,7 +736,6 @@ elif st.session_state.get("question"):
                 st.session_state.score += (1 if is_correct else 0)
                 st.session_state[score_flag_key] = is_correct
                 
-                # Ghi lịch sử làm bài
                 st.session_state.quiz_history.append({
                     "Câu hỏi": question_text_show,
                     "Bạn chọn": str(user_choice).strip(),
