@@ -185,13 +185,45 @@ quiz_mode = st.sidebar.radio(
 time_per_question = st.sidebar.slider("⏱️ Thời gian mỗi câu (giây):", min_value=5, max_value=60, value=15)
 start_button = st.sidebar.button("🚀 Bắt đầu kiểm tra", use_container_width=True)
 
-# --- 2. KHU VỰC PHÒNG THI NHÓM ---
-with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False):
+# --- 2. KHU VỰC PHÒNG THI NHÓM (CẢI TIẾN ĐỒNG BỘ 100%) ---
+with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=True):
     st.caption("Khởi tạo hoặc gia nhập cuộc thi nhóm")
+    
+    # A. NHẬP MÃ PHÒNG TRỰC TIẾP ĐỂ THI ĐẤU
+    st.markdown("**1. Nhập mã phòng để gia nhập ngay:**")
+    join_code_input = st.text_input("🔑 Nhập mã phòng:", placeholder="VD: ROOM_8736", key="join_code_input").strip().upper()
+    if st.button("🚪 Gia nhập phòng này", use_container_width=True):
+        if join_code_input:
+            st.session_state.in_room_exam = True
+            st.session_state.room_info = {"roomId": join_code_input, "host": "Bạn thi", "mode": "Dạng 1", "numQ": 5}
+            st.session_state.room_q_index = 0
+            st.session_state.room_score = 0
+            
+            # Đồng bộ câu hỏi bằng Seed từ mã phòng
+            seed_val = sum(ord(c) for c in join_code_input)
+            rng = random.Random(seed_val)
+            
+            pool = FULL_VOCAB
+            questions_deck = []
+            for _ in range(5):
+                tgt = rng.choice(pool)
+                wrong_opts = [str(x.get("pinyin", "")).strip() for x in pool if str(x.get("pinyin", "")).strip() != str(tgt.get("pinyin", "")).strip()]
+                opts = rng.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("pinyin", "")).strip()]
+                rng.shuffle(opts)
+                questions_deck.append({"target": tgt, "options": opts, "mode": "Dạng 1"})
+            st.session_state.room_questions = questions_deck
+            st.rerun()
+        else:
+            st.warning("⚠️ Vui lòng nhập mã phòng!")
+
+    st.write("---")
+    
+    # B. TẠO PHÒNG MỚI
+    st.markdown("**2. Hoặc tạo phòng thi mới:**")
     host_mode = st.selectbox("Dạng bài thi:", ["Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa"])
     host_num_questions = st.number_input("Số lượng câu:", min_value=3, max_value=20, value=5)
     
-    if st.button("➕ Tạo Phòng Thi"):
+    if st.button("➕ Tạo Phòng Thi", use_container_width=True):
         h_name = user_name.strip() if user_name.strip() else "Ẩn danh"
         new_room_id = f"ROOM_{random.randint(1000, 9999)}"
         new_rm = {
@@ -202,53 +234,64 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
         }
         st.session_state.local_rooms.insert(0, new_rm)
         
-        # Thử đồng bộ ngầm lên Google Sheet
         try:
             params = {"action": "create_room", "roomId": new_room_id, "host": h_name, "lessons": json.dumps(selected_lessons), "mode": host_mode, "num_questions": host_num_questions}
-            requests.get(GOOGLE_SHEET_URL, params=params, timeout=3.0)
+            requests.get(GOOGLE_SHEET_URL, params=params, timeout=2.0)
         except Exception:
             pass
             
-        st.success(f"🎉 Đã tạo phòng **{new_room_id}** thành công!")
         st.cache_data.clear()
-        time.sleep(0.3)
+        st.success(f"🎉 Mã phòng: **{new_room_id}**! Gửi mã này cho bạn thi!")
         st.rerun()
 
     st.write("---")
-    st.markdown("**Danh Sách Phòng:**")
+    
+    # C. DANH SÁCH PHÒNG VÀ NÚT REFRESH
+    col_lbl, col_ref = st.columns([2, 1])
+    with col_lbl:
+        st.markdown("**3. Danh sách phòng:**")
+    with col_ref:
+        if st.button("🔄 Reload", key="btn_refresh_rooms", help="Tải lại danh sách"):
+            st.cache_data.clear()
+            st.rerun()
+
     remote_rooms = fetch_rooms_from_sheet()
     local_ids = [x.get("roomId") for x in st.session_state.local_rooms]
     valid_rooms = st.session_state.local_rooms + [r for r in remote_rooms if r.get("roomId") not in local_ids]
         
     if not valid_rooms:
-        st.caption("Chưa có phòng nào. Hãy nhấn 'Tạo Phòng Thi'!")
+        st.caption("Chưa thấy phòng trong danh sách. Hãy dùng ô Nhập Mã Phòng ở trên!")
     else:
         for idx, rm in enumerate(valid_rooms):
             r_id = rm.get("roomId", "")
             r_host = rm.get("host", "Ẩn danh")
             r_mode = rm.get("mode", "Dạng 1")
             r_num = rm.get("numQ", 5)
-            if st.button(f"🎮 Gia nhập {r_id} ({r_host})", key=f"btn_join_{r_id}_{idx}"):
+            if st.button(f"🎮 {r_id} ({r_host}) - {r_num} câu", key=f"btn_join_{r_id}_{idx}", use_container_width=True):
                 st.session_state.in_room_exam = True
                 st.session_state.room_info = rm
                 st.session_state.room_q_index = 0
                 st.session_state.room_score = 0
                 
+                # Seed bằng mã phòng để hai máy ra câu hỏi giống hệt nhau 100%
+                seed_val = sum(ord(c) for c in r_id)
+                rng = random.Random(seed_val)
+                
                 pool = FULL_VOCAB
                 questions_deck = []
                 for _ in range(int(r_num)):
-                    tgt = random.choice(pool)
+                    tgt = rng.choice(pool)
                     if "Dạng 1" in r_mode:
                         wrong_opts = [str(x.get("pinyin", "")).strip() for x in pool if str(x.get("pinyin", "")).strip() != str(tgt.get("pinyin", "")).strip()]
-                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("pinyin", "")).strip()]
+                        opts = rng.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("pinyin", "")).strip()]
                     elif "Dạng 2" in r_mode:
                         wrong_opts = [str(x.get("char", "")).strip() for x in pool if str(x.get("char", "")).strip() != str(tgt.get("char", "")).strip()]
-                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("char", "")).strip()]
+                        opts = rng.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("char", "")).strip()]
                     else:
                         wrong_opts = [str(x.get("meaning", "")).strip() for x in pool if str(x.get("meaning", "")).strip() != str(tgt.get("meaning", "")).strip()]
-                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("meaning", "")).strip()]
+                        opts = rng.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("meaning", "")).strip()]
                         
-                    random.shuffle(opts)
+                    rng.shuffle(opts)
                     questions_deck.append({"target": tgt, "options": opts, "mode": r_mode})
                     
                 st.session_state.room_questions = questions_deck
