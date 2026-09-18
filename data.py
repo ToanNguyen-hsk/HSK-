@@ -65,6 +65,39 @@ FULL_VOCAB = [
     {"char": "先生", "pinyin": "xiānsheng", "meaning": "ngài, ông", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
     {"char": "也", "pinyin": "yě", "meaning": "cũng", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
     {"char": "马", "pinyin": "Mǎ", "meaning": "(Họ) Mã", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "西", "pinyin": "xī", "meaning": "phía Tây", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "早", "pinyin": "zǎo", "meaning": "sớm", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "草", "pinyin": "cǎo", "meaning": "cỏ", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "吵", "pinyin": "chǎo", "meaning": "ồn ào", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "小", "pinyin": "xiǎo", "meaning": "nhỏ", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "扫", "pinyin": "sǎo", "meaning": "quét", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "少", "pinyin": "shǎo", "meaning": "ít", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "四", "pinyin": "sì", "meaning": "bốn", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "十", "pinyin": "shí", "meaning": "mười", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "蛇", "pinyin": "shé", "meaning": "rắn", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "是", "pinyin": "shì", "meaning": "là", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "射", "pinyin": "shè", "meaning": "bắn", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "日", "pinyin": "rì", "meaning": "mặt trời", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "金", "pinyin": "jīn", "meaning": "vàng", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "亲", "pinyin": "qīn", "meaning": "thân", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "新", "pinyin": "xīn", "meaning": "mới", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "自己", "pinyin": "zìjǐ", "meaning": "bản thân", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "瓷器", "pinyin": "cíqì", "meaning": "đồ sứ", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "司机", "pinyin": "sījī", "meaning": "tài xế", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "时机", "pinyin": "shíjī", "meaning": "thời cơ", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "鼻子", "pinyin": "bízi", "meaning": "mũi", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "笔记", "pinyin": "bǐjì", "meaning": "ghi chú", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "鸡蛋", "pinyin": "jīdàn", "meaning": "trứng", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "子弹", "pinyin": "zǐdàn", "meaning": "viên đạn", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "吃饭", "pinyin": "chī fàn", "meaning": "ăn cơm", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "迟到", "pinyin": "chídào", "meaning": "đến muộn", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "成绩", "pinyin": "chéngjì", "meaning": "thành tích", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "起床", "pinyin": "qǐ chuáng", "meaning": "thức dậy", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "经常", "pinyin": "jīngcháng", "meaning": "thường xuyên", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "词典", "pinyin": "cídiǎn", "meaning": "từ điển", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "时间", "pinyin": "shíjiān", "meaning": "thời gian", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "师父", "pinyin": "shīfu", "meaning": "sư phụ", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
+    {"char": "上午", "pinyin": "shàngwǔ", "meaning": "buổi sáng", "lesson": "Quyển 1 - Bài 3: 很高兴认识你"},
 
     # Quyển 1 - Bài 4
     {"char": "小姐", "pinyin": "xiǎojiě", "meaning": "cô, tiểu thư", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
@@ -86,6 +119,14 @@ FULL_VOCAB = [
     {"char": "打车", "pinyin": "dǎ chē", "meaning": "bắt xe, gọi xe", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
     {"char": "地铁", "pinyin": "dìtiě", "meaning": "tàu điện ngầm", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
     {"char": "银行", "pinyin": "yínháng", "meaning": "ngân hàng", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
+    {"char": "公安局", "pinyin": "gōng'ān jú", "meaning": "sở công an", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
+    {"char": "饭店", "pinyin": "fàndiàn", "meaning": "nhà hàng, khách sạn", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
+    {"char": "邮局", "pinyin": "yóujú", "meaning": "bưu điện", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
+    {"char": "宾馆", "pinyin": "bīnguǎn", "meaning": "khách sạn", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
+    {"char": "洗手间", "pinyin": "xǐshǒujiān", "meaning": "nhà vệ sinh", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
+    {"char": "厕所", "pinyin": "cèsuǒ", "meaning": "nhà vệ sinh", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
+    {"char": "飞机场", "pinyin": "fēijīchǎng", "meaning": "sân bay", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
+    {"char": "火车站", "pinyin": "huǒchēzhàn", "meaning": "ga tàu", "lesson": "Quyển 1 - Bài 4: 你去哪儿?"},
 
     # Quyển 1 - Bài 5
     {"char": "要", "pinyin": "yào", "meaning": "muốn, cần, phải", "lesson": "Quyển 1 - Bài 5: 你要吃什么?"},
@@ -287,11 +328,11 @@ FULL_VOCAB = [
     {"char": "早", "pinyin": "zǎo", "meaning": "sớm", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"char": "睡觉", "pinyin": "shuìjiào", "meaning": "ngủ", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"char": "睡", "pinyin": "shuì", "meaning": "ngủ", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
-    {"char": "因为", "pinyin": "yīnwèi", "meaning": "bởi vì", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
+    {"char": "เพราะ为", "pinyin": "yīnwèi", "meaning": "bởi vì", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"char": "晚", "pinyin": "wǎn", "meaning": "muộn", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
 
     # Quyển 2 - Bài 3
-    {"char": " सकते/可以用", "pinyin": "kěyǐ", "meaning": "có thể", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
+    {"char": "可以", "pinyin": "kěyǐ", "meaning": "có thể", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
     {"char": "给", "pinyin": "gěi", "meaning": "cho", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
     {"char": "打电话", "pinyin": "dǎ diànhuà", "meaning": "gọi điện thoại", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
     {"char": "电话", "pinyin": "diànhuà", "meaning": "cuộc điện thoại", "lesson": "Quyển 2 - Bài 3: 可以用一下你的手机吗?"},
@@ -341,23 +382,23 @@ FULL_VOCAB = [
     {"char": "喂", "pinyin": "wèi", "meaning": "alo", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
     {"char": "位", "pinyin": "wèi", "meaning": "lượng từ (chỉ người)", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
     {"char": "忙", "pinyin": "máng", "meaning": "bận, bận rộn", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "有点儿", "pinyin": "yǒudiǎnr", "meaning": "hơi... một chút", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "考试", "pinyin": "kǎoshì", "meaning": "kiểm tra, thi", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "HSK", "pinyin": "HSK", "meaning": "Kỳ thi HSK", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "帮", "pinyin": "bāng", "meaning": "giúp đỡ", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "准备", "pinyin": "zhǔnbèi", "meaning": "chuẩn bị", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "时候", "pinyin": "shíhou", "meaning": "lúc, khi", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "跟", "pinyin": "gēn", "meaning": "cùng, với", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "上午", "pinyin": "shàngwǔ", "meaning": "buổi sáng", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "下午", "pinyin": "xiàwǔ", "meaning": "buổi chiều", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "参加", "pinyin": "cānjiā", "meaning": "tham gia", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "比赛", "pinyin": "bǐsài", "meaning": "cuộc thi", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "图书馆", "pinyin": "túshūguǎn", "meaning": "thư viện", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "难", "pinyin": "nán", "meaning": "khó", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "昨天", "pinyin": "zuótiān", "meaning": "hôm qua", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "东西", "pinyin": "dōngxi", "meaning": "đồ vật", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "旅行", "pinyin": "lǚxíng", "meaning": "du lịch", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"char": "不好意思", "pinyin": "bù hǎoyìsi", "meaning": "xin lỗi, xấu hổ", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
+    {"char": "有点儿", "pinyin": "yǒudiǎnr", "meaning": "hơi... một chút", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "考试", "pinyin": "kǎoshì", "meaning": "kiểm tra, thi", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "HSK", "pinyin": "HSK", "meaning": "Kỳ thi HSK", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "帮", "pinyin": "bāng", "meaning": "giúp đỡ", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "准备", "pinyin": "zhǔnbèi", "meaning": "chuẩn bị", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "时候", "pinyin": "shíhou", "meaning": "lúc, khi", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "跟", "pinyin": "gēn", "meaning": "cùng, với", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "上午", "pinyin": "shàngwǔ", "meaning": "buổi sáng", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "下午", "pinyin": "xiàwǔ", "meaning": "buổi chiều", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "参加", "pinyin": "cānjiā", "meaning": "tham gia", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "比赛", "pinyin": "bǐsài", "meaning": "cuộc thi", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "图书馆", "pinyin": "túshūguǎn", "meaning": "thư viện", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "难", "pinyin": "nán", "meaning": "khó", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "昨天", "pinyin": "zuótiān", "meaning": "hôm qua", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "东西", "pinyin": "dōngxi", "meaning": "đồ vật", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "旅行", "pinyin": "lǚxíng", "meaning": "du lịch", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"char": "不好意思", "pinyin": "bù hǎoyìsi", "meaning": "xin lỗi, xấu hổ", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
 
     # Quyển 2 - Bài 6
     {"char": "上个", "pinyin": "shàng gè", "meaning": "trước", "lesson": "Quyển 2 - Bài 6: 上个周末你做什么了?"},
@@ -383,7 +424,7 @@ FULL_VOCAB = [
 
     # Quyển 2 - Bài 7
     {"char": "告诉", "pinyin": "gàosu", "meaning": "nói với", "lesson": "Quyển 2 - Bài 7: 你是跟谁一起去的?"},
-    {"char": "微信", "pinyin": "wēixìn", "meaning": "WeChat", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
+    {"char": "微信", "pinyin": "wēixìn", "meaning": "WeChat", "lesson": "Quyển 2 - Bài 7: 你是跟谁一起去的?"},
     {"char": "忘", "pinyin": "wàng", "meaning": "quên, quên mất", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
     {"char": "哈哈", "pinyin": "hāhā", "meaning": "ha ha", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
     {"char": "当然", "pinyin": "dāngrán", "meaning": "đương nhiên", "lesson": "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?"},
@@ -569,7 +610,7 @@ FULL_SENTENCES = [
     {"sentence": "你平时几点起床？", "meaning": "Bình thường mấy giờ bạn thức dậy?", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"sentence": "我每天早上六点一刻起床。", "meaning": "Hàng ngày tôi thức dậy lúc 6 giờ 15 phút sáng.", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"sentence": "你今天怎么这么早？", "meaning": "Hôm nay sao bạn lại đến sớm thế này?", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
-    {"sentence": "因为我昨天晚上很早就睡觉了。", "meaning": "Bởi vì tối qua tôi đã đi ngủ từ rất sớm.", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
+    {"sentence": "เพราะ我昨天晚上很早就睡觉了。", "meaning": "Bởi vì tối qua tôi đã đi ngủ từ rất sớm.", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
     {"sentence": "我们中午在学校门口见。", "meaning": "Buổi trưa chúng ta gặp nhau ở cổng trường.", "lesson": "Quyển 2 - Bài 2: 你平时几点起床?"},
 
     # Quyển 2 - Bài 3 (6 câu)
@@ -589,9 +630,9 @@ FULL_SENTENCES = [
     {"sentence": "大小怎么样？不错！", "meaning": "Kích cỡ như thế nào? Rất tốt!", "lesson": "Quyển 2 - Bài 4: 你想要哪件?"},
 
     # Quyển 2 - Bài 5 (5 câu)
-    {"sentence": "喂，请问是大卫吗？", "meaning": "Alo, xin hỏi có phải David đấy không?", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"sentence": "我最近有点儿忙，要准备HSK考试。", "meaning": "Dạo này tôi hơi bận một chút, phải chuẩn bị thi HSK.", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
-    {"sentence": "你什么时候有空儿帮我复习？", "meaning": "Khi nào bạn có thời gian rảnh giúp tôi ôn tập?", "lesson": "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?"},
+    {"sentence": "喂，请问是大卫吗？", "meaning": "Alo, xin hỏi có phải David đấy không?", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"sentence": "我最近有点儿忙，要准备HSK考试。", "meaning": "Dạo này tôi hơi bận một chút, phải chuẩn bị thi HSK.", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
+    {"sentence": "你什么时候有空儿帮我复习？", "meaning": "Khi nào bạn có thời gian rảnh giúp tôi ôn tập?", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
     {"sentence": "星期六上午我要去图书馆参加比赛。", "meaning": "Sáng thứ 7 tôi phải đi thư viện tham gia cuộc thi.", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
     {"sentence": "不好意思，今天下午我有事。", "meaning": "Xin lỗi, chiều hôm nay tôi có chút việc.", "lesson": "Quyển 2 - Bài 5: 你 cái周末什么时候有空儿?"},
 
@@ -636,423 +677,3 @@ FULL_SENTENCES = [
     {"sentence": "你怕不怕辣？我不怕辣。", "meaning": "Bạn có sợ cay không? Tôi không sợ cay.", "lesson": "Quyển 2 - Bài 10: 给您添麻烦了!"},
     {"sentence": "这个糖醋鱼酸酸甜甜的，很好吃。", "meaning": "Món cá sốt chua ngọt này chua chua ngọt ngọt, rất ngon.", "lesson": "Quyển 2 - Bài 10: 给您添麻烦了!"}
 ]
-
-DYNAMIC_LESSONS = [
-    "Quyển 1 - Bài 1: 你好", "Quyển 1 - Bài 2: 你叫什么名字?", "Quyển 1 - Bài 3: 很高兴认识你",
-    "Quyển 1 - Bài 4: 你去哪儿?", "Quyển 1 - Bài 5: 你要吃什么?", "Quyển 1 - Bài 6: 你在哪儿工作?",
-    "Quyển 1 - Bài 7: 中国银行在哪儿?", "Quyển 1 - Bài 8: 你的生日是几月几号?", "Quyển 1 - Bài 9: 你喜欢中国电影还是美国电影?",
-    "Quyển 1 - Bài 10: 你家有几口人?", "Quyển 2 - Bài 1: 你在听什么?", "Quyển 2 - Bài 2: 你平时几点起床?",
-    "Quyển 2 - Bài 3: 可以用一下你的手机吗?", "Quyển 2 - Bài 4: 你想要哪件?", "Quyển 2 - Bài 5: 你这个周末什么时候有空儿?",
-    "Quyển 2 - Bài 6: 上个周末你做什么了?", "Quyển 2 - Bài 7: 你是跟谁 festival一起去的?", "Quyển 2 - Bài 8: 你会做菜吗?",
-    "Quyển 2 - Bài 9: 你见过熊猫吗?", "Quyển 2 - Bài 10: 给您添麻烦了!"
-]
-
-# Khởi tạo trạng thái Session
-for k in ["score", "total", "q_id"]:
-    if k not in st.session_state: st.session_state[k] = 0
-if "quiz_started" not in st.session_state: st.session_state.quiz_started = False
-if "quiz_finished" not in st.session_state: st.session_state.quiz_finished = False
-if "start_time" not in st.session_state: st.session_state.start_time = time.time()
-if "local_leaderboard" not in st.session_state:
-    st.session_state.local_leaderboard = [
-        {"name": "Giáo viên tập sự", "score": 10, "total": 10, "mode": "Dạng 1", "date": "17/09/2026 14:30"},
-        {"name": "Thành viên HSK", "score": 8, "total": 10, "mode": "Dạng 4", "date": "17/09/2026 12:15"}
-    ]
-
-# --- 1. THANH BÊN CẤU HÌNH CÁ NHÂN ---
-st.sidebar.title("👤 Thông Tin Người Làm")
-user_name = st.sidebar.text_input("Họ và tên (không bắt buộc):", value=st.session_state.get("user_name", ""), placeholder="Nhập tên của bạn...")
-st.session_state.user_name = user_name
-
-st.sidebar.title("⚙️ Tùy Chỉnh Bài Học")
-selected_lessons = st.sidebar.multiselect("Lựa chọn bài kiểm tra:", options=DYNAMIC_LESSONS, default=DYNAMIC_LESSONS[:5])
-
-st.sidebar.title("🎯 Dạng Bài Tập")
-quiz_mode = st.sidebar.radio(
-    "Chọn dạng bài kiểm tra:",
-    ("Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa", "Dạng 4: Ghép câu hội thoại chuẩn")
-)
-
-time_per_question = st.sidebar.slider("⏱️ Thời gian mỗi câu (giây):", min_value=5, max_value=60, value=15)
-start_button = st.sidebar.button("🚀 Bắt đầu kiểm tra", use_container_width=True)
-
-# --- 2. KHU VỰC PHÒNG THI NHÓM ---
-with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False):
-    st.caption("Khởi tạo hoặc gia nhập cuộc thi nhóm")
-    host_mode = st.selectbox("Dạng bài thi:", ["Dạng 1: Chữ Hán ➡️ 4 Pinyin", "Dạng 2: Pinyin ➡️ 4 Chữ Hán", "Dạng 3: Hán + Pinyin ➡️ 4 Nghĩa"])
-    host_num_questions = st.number_input("Số lượng câu:", min_value=3, max_value=20, value=5)
-    
-    if st.button("➕ Tạo Phòng Thi"):
-        h_name = user_name.strip() if user_name.strip() else "Ẩn danh"
-        try:
-            params = {"action": "create_room", "host": h_name, "lessons": json.dumps(selected_lessons), "mode": host_mode, "num_questions": host_num_questions}
-            requests.get(GOOGLE_SHEET_URL, params=params, timeout=1.5)
-            st.success("🎉 Đã yêu cầu tạo phòng thành công!")
-        except Exception:
-            st.warning("⚠️ Lỗi mạng: Gửi yêu cầu thất bại.")
-            
-    st.write("---")
-    st.markdown("**Danh Sách Phòng:**")
-    valid_rooms = fetch_rooms_from_sheet()
-        
-    if not valid_rooms:
-        st.caption("Chưa có phòng nào. Hãy nhấn 'Tạo Phòng Thi'!")
-    else:
-        for idx, rm in enumerate(valid_rooms):
-            r_id = rm.get("roomId", "")
-            r_host = rm.get("host", "Ẩn danh")
-            r_mode = rm.get("mode", "Dạng 1")
-            r_num = rm.get("numQ", 5)
-            if st.button(f"🎮 Gia nhập {r_id} ({r_host})", key=f"btn_join_{r_id}_{idx}"):
-                st.session_state.in_room_exam = True
-                st.session_state.room_info = rm
-                st.session_state.room_q_index = 0
-                st.session_state.room_score = 0
-                
-                pool = FULL_VOCAB
-                questions_deck = []
-                for _ in range(int(r_num)):
-                    tgt = random.choice(pool)
-                    if "Dạng 1" in r_mode:
-                        wrong_opts = [str(x.get("pinyin", "")).strip() for x in pool if str(x.get("pinyin", "")).strip() != str(tgt.get("pinyin", "")).strip()]
-                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("pinyin", "")).strip()]
-                    elif "Dạng 2" in r_mode:
-                        wrong_opts = [str(x.get("char", "")).strip() for x in pool if str(x.get("char", "")).strip() != str(tgt.get("char", "")).strip()]
-                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("char", "")).strip()]
-                    else:
-                        wrong_opts = [str(x.get("meaning", "")).strip() for x in pool if str(x.get("meaning", "")).strip() != str(tgt.get("meaning", "")).strip()]
-                        opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [str(tgt.get("meaning", "")).strip()]
-                        
-                    random.shuffle(opts)
-                    questions_deck.append({"target": tgt, "options": opts, "mode": r_mode})
-                    
-                st.session_state.room_questions = questions_deck
-                st.rerun()
-
-# HÀM TẠO CÂU HỎI MỚI
-def new_question(mode_choice, lessons_choice):
-    st.session_state.q_id += 1
-    st.session_state.start_time = time.time()
-    
-    vocab_pool = [i for i in FULL_VOCAB if is_lesson_selected(i.get("lesson"), lessons_choice)]
-    sent_pool = [i for i in FULL_SENTENCES if is_lesson_selected(i.get("lesson"), lessons_choice)]
-    
-    if not vocab_pool: vocab_pool = FULL_VOCAB
-    if not sent_pool: sent_pool = FULL_SENTENCES
-
-    if "Dạng 4" in mode_choice:
-        target = random.choice(sent_pool)
-        raw_sentence = re.sub(r'[？！。，、“”]', '', str(target.get("sentence", ""))).strip()
-        words = list(raw_sentence)
-        shuffled_words = list(words)
-        random.shuffle(shuffled_words)
-        st.session_state.question = {
-            "mode": 4, "meaning": str(target.get("meaning", "")).strip(), "correct_sentence": raw_sentence,
-            "shuffled_words": shuffled_words, "full_target": str(target.get("sentence", "")).strip()
-        }
-    else:
-        target = random.choice(vocab_pool)
-        
-        if "Dạng 1" in mode_choice:
-            target_ans = str(target.get("pinyin", "")).strip()
-            wrong_opts = [str(item.get("pinyin", "")).strip() for item in FULL_VOCAB if str(item.get("pinyin", "")).strip() != target_ans]
-            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target_ans]
-            random.shuffle(opts)
-            st.session_state.question = {"mode": 1, "target": target, "options": opts, "correct_ans": target_ans}
-            
-        elif "Dạng 2" in mode_choice:
-            target_ans = str(target.get("char", "")).strip()
-            wrong_opts = [str(item.get("char", "")).strip() for item in FULL_VOCAB if str(item.get("char", "")).strip() != target_ans]
-            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target_ans]
-            random.shuffle(opts)
-            st.session_state.question = {"mode": 2, "target": target, "options": opts, "correct_ans": target_ans}
-            
-        elif "Dạng 3" in mode_choice:
-            target_ans = str(target.get("meaning", "")).strip()
-            wrong_opts = [str(item.get("meaning", "")).strip() for item in FULL_VOCAB if str(item.get("meaning", "")).strip() != target_ans]
-            opts = random.sample(wrong_opts, min(3, len(wrong_opts))) + [target_ans]
-            random.shuffle(opts)
-            st.session_state.question = {"mode": 3, "target": target, "options": opts, "correct_ans": target_ans}
-
-if start_button:
-    st.session_state.quiz_started = True
-    st.session_state.quiz_finished = False
-    st.session_state.in_room_exam = False
-    st.session_state.active_mode = quiz_mode
-    st.session_state.active_lessons = selected_lessons
-    st.session_state.active_timer = time_per_question
-    st.session_state.score = 0
-    st.session_state.total = 0
-    new_question(quiz_mode, selected_lessons)
-    st.rerun()
-
-st.title("🎓 App Kiểm Tra Từ Vựng & Ngữ Pháp MSUTONG")
-
-# ==========================================
-# 📊 GIAO DIỆN TỔNG KẾT BÀI THI & BẢNG TỶ SỐ
-# ==========================================
-if st.session_state.get("quiz_finished", False):
-    st.balloons()
-    st.success("🎉 BẠN ĐÃ HOÀN THÀNH BÀI KIỂM TRA!")
-    
-    total_q = st.session_state.get('total', 0)
-    score_q = st.session_state.get('score', 0)
-    ratio = round((score_q / total_q) * 100, 1) if total_q > 0 else 0
-    
-    st.metric(label="📊 Điểm số chung cuộc", value=f"{score_q} / {total_q} câu đúng", delta=f"{ratio}% Tỷ lệ chính xác")
-    
-    st.write("---")
-    st.markdown("<div class='leaderboard-title'>📝 Cập nhật tên & Lưu điểm vào Bảng Tỷ Số</div>", unsafe_allow_html=True)
-    
-    col_name, col_save = st.columns([3, 1])
-    with col_name:
-        update_name = st.text_input("👤 Họ và tên người làm (không bắt buộc):", value=st.session_state.get("user_name", ""), key="end_user_name_input")
-    with col_save:
-        st.write(" ")
-        st.write(" ")
-        save_score_btn = st.button("💾 Lưu Bảng Tỷ Số", use_container_width=True)
-        
-    if save_score_btn:
-        final_name = update_name.strip() if update_name.strip() else "Ẩn danh"
-        st.session_state.user_name = final_name
-        now_str = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
-        
-        new_entry = {
-            "name": final_name,
-            "score": score_q,
-            "total": total_q,
-            "mode": st.session_state.get("active_mode", "Dạng 1"),
-            "date": now_str
-        }
-        st.session_state.local_leaderboard.insert(0, new_entry)
-        
-        # Gửi điểm lên Google Sheet
-        try:
-            params = {
-                "action": "save_score",
-                "name": final_name,
-                "score": score_q,
-                "total": total_q,
-                "mode": st.session_state.get("active_mode", "Dạng 1")
-            }
-            requests.get(GOOGLE_SHEET_URL, params=params, timeout=1.5)
-        except Exception:
-            pass
-            
-        st.success(f"✅ Đã ghi nhận kết quả của **{final_name}** vào Bảng Tỷ Số!")
-
-    st.write("---")
-    st.markdown("<div class='leaderboard-title'>🏆 BẢNG TỶ SỐ CÁC THÀNH VIÊN</div>", unsafe_allow_html=True)
-    if st.session_state.local_leaderboard:
-        df_lb = pd.DataFrame(st.session_state.local_leaderboard)
-        df_lb.columns = ["Họ và tên", "Điểm", "Tổng câu", "Dạng bài", "Thời gian"]
-        st.dataframe(df_lb, use_container_width=True, hide_index=True)
-
-    st.write(" ")
-    if st.button("🔄 Làm bài kiểm tra mới", use_container_width=True):
-        st.session_state.quiz_started = False
-        st.session_state.quiz_finished = False
-        st.rerun()
-
-# --- GIAO DIỆN LÀM BÀI PHÒNG THI NHÓM ---
-elif st.session_state.get("in_room_exam", False):
-    rm_info = st.session_state.get("room_info", {})
-    st.info(f"🏆 **ĐANG THI NHÓM MULTIPLAYER** | Phòng: **{rm_info.get('roomId')}**")
-    curr_idx = st.session_state.get("room_q_index", 0)
-    total_q = int(rm_info.get("numQ", 5))
-    questions = st.session_state.get("room_questions", [])
-    
-    if curr_idx >= total_q or not questions:
-        st.balloons()
-        st.success("🎉 CẢM ƠN BẠN ĐÃ HOÀN THÀNH CUỘC THI NHÓM!")
-        st.write(f"📊 Điểm số: **{st.session_state.get('room_score', 0)} / {total_q}** câu đúng.")
-        if st.button("🚪 Trở Về Trang Chủ"):
-            st.session_state.in_room_exam = False
-            st.rerun()
-    else:
-        st.subheader(f"Câu {curr_idx + 1}/{total_q}:")
-        q_item = questions[curr_idx]
-        target, options, r_mode = q_item["target"], q_item["options"], q_item["mode"]
-        
-        if "Dạng 1" in r_mode:
-            st.markdown(f"<h1 style='text-align: center; font-size: 90px; color: #1E88E5;'>{target.get('char')}</h1>", unsafe_allow_html=True)
-            play_audio_js(target.get('char'))
-            correct_ans = f"{str(target.get('pinyin', '')).strip()} ({str(target.get('meaning', '')).strip()})"
-        elif "Dạng 2" in r_mode:
-            st.markdown(f"<h1 style='text-align: center; font-size: 70px; color: #1E88E5;'>{target.get('pinyin')}</h1>", unsafe_allow_html=True)
-            play_audio_js(target.get('char'))
-            correct_ans = f"{str(target.get('char', '')).strip()} ({str(target.get('meaning', '')).strip()})"
-        else:
-            st.markdown(f"<h1 style='text-align: center; font-size: 80px; color: #1E88E5;'>{target.get('char')}</h1>", unsafe_allow_html=True)
-            play_audio_js(target.get('char'))
-            st.markdown(f"<h3 style='text-align: center; color: #666;'>{target.get('pinyin')}</h3>", unsafe_allow_html=True)
-            correct_ans = f"{str(target.get('meaning', '')).strip()} ({str(target.get('pinyin', '')).strip()})"
-        
-        ans = st.radio("Chọn đáp án:", options, index=None, key=f"rm_ans_{curr_idx}")
-        if ans is not None:
-            ans_clean = str(ans).strip()
-            if ans_clean in correct_ans or correct_ans.startswith(ans_clean): 
-                st.session_state.room_score += 1
-                st.success(f"🎉 Chính xác! **{correct_ans}**")
-            else:
-                st.error(f"❌ Sai rồi! Đáp án đúng: **{correct_ans}**")
-                
-            if st.button("Câu tiếp theo ➡️"):
-                st.session_state.room_q_index += 1
-                st.rerun()
-
-# --- GIAO DIỆN LÀM BÀI CÁ NHÂN ---
-elif not st.session_state.quiz_started:
-    st.info("👈 Chọn bài kiểm tra ở thanh bên trái và bấm **🚀 Bắt đầu kiểm tra**!")
-
-elif st.session_state.get("question"):
-    q = st.session_state.question
-    score_flag_key = f"scored_{st.session_state.q_id}"
-    word_state_key = f"word_indices_{st.session_state.q_id}"
-    if word_state_key not in st.session_state:
-        st.session_state[word_state_key] = []
-        
-    has_answered = score_flag_key in st.session_state
-    
-    elapsed = time.time() - st.session_state.start_time
-    timer_limit = st.session_state.get("active_timer", 15)
-    remaining = max(0, int(timer_limit - elapsed))
-
-    # TÍNH CHUỖI HIỂN THỊ ĐÁP ÁN CHUẨN (KÈM DỊCH NGHĨA TIẾNG VIỆT FOR ALL MODES)
-    if q.get("mode") == 4:
-        correct_ans_display = f"{q['full_target']} ({q['meaning']})"
-        tts_target_text = q["full_target"]
-    elif q["mode"] == 1:
-        correct_ans_display = f"{q['target']['pinyin']} ({q['target']['meaning']})"
-        tts_target_text = q["target"]["char"]
-    elif q["mode"] == 2:
-        correct_ans_display = f"{q['target']['char']} ({q['target']['meaning']})"
-        tts_target_text = q["target"]["char"]
-    elif q["mode"] == 3:
-        correct_ans_display = f"{q['target']['meaning']} ({q['target']['pinyin']})"
-        tts_target_text = q["target"]["char"]
-
-    # --- DẠNG 4: GHÉP CÂU HỘI THOẠI ---
-    if q.get("mode") == 4:
-        st.subheader("🧩 Bài Tập Ghép Câu Hội Thoại")
-        st.markdown(f"### 💡 **Ý nghĩa:** `{q['meaning']}`")
-        
-        # Phát âm từ vừa click (nếu có)
-        last_word_key = f"last_word_{st.session_state.q_id}"
-        if last_word_key in st.session_state:
-            play_audio_js(st.session_state[last_word_key])
-            del st.session_state[last_word_key]
-
-        # HIỂN THỊ CÂU BẠN ĐÃ GHÉP
-        selected_indices = st.session_state[word_state_key]
-        user_sentence_str = "".join([q["shuffled_words"][i] for i in selected_indices])
-        
-        display_str = user_sentence_str if user_sentence_str else "..."
-        st.markdown(f"<div style='background-color: #F1F8E9; padding: 12px 16px; border-radius: 10px; border: 2px solid #C8E6C9; margin-bottom: 12px;'><span style='font-size: 18px; color: #555;'>Thứ tự câu bạn ghép:</span> <br><span style='font-size: 28px; font-weight: bold; color: #2E7D32;'>{display_str}</span></div>", unsafe_allow_html=True)
-        
-        # HIỂN THỊ CÁC NÚT BẤM THẺ CHỮ TRỰC TIẾP
-        st.markdown("**Click trực tiếp vào các từ/chữ dưới đây theo thứ tự:**")
-        num_words = len(q["shuffled_words"])
-        cols = st.columns(min(num_words, 8))
-        
-        for idx, word in enumerate(q["shuffled_words"]):
-            col = cols[idx % min(num_words, 8)]
-            is_used = idx in selected_indices
-            if col.button(word, key=f"w_btn_{st.session_state.q_id}_{idx}", disabled=is_used or has_answered, use_container_width=True):
-                st.session_state[word_state_key].append(idx)
-                st.session_state[last_word_key] = word
-                st.rerun()
-
-        # NÚT XÓA CHỮ VỪA CHỌN VÀ NÚT CHỌN LẠI TỪ ĐẦU
-        if selected_indices and not has_answered:
-            c_undo, c_reset = st.columns(2)
-            with c_undo:
-                if st.button("⌫ Xóa chữ vừa chọn", key=f"undo_w_{st.session_state.q_id}", use_container_width=True):
-                    st.session_state[word_state_key].pop()
-                    st.rerun()
-            with c_reset:
-                if st.button("🔄 Chọn lại từ đầu", key=f"reset_w_{st.session_state.q_id}", use_container_width=True):
-                    st.session_state[word_state_key] = []
-                    st.rerun()
-
-        # TỰ ĐỘNG CHẤM ĐIỂM KHI CHỌN ĐỦ TOÀN BỘ CÁC CHỮ
-        if len(selected_indices) == num_words and not has_answered:
-            st.session_state.total += 1
-            is_correct = (user_sentence_str.strip() == q["correct_sentence"].strip())
-            st.session_state.score += (1 if is_correct else 0)
-            st.session_state[score_flag_key] = is_correct
-            st.rerun()
-
-        # TH1: ĐÃ TRẢ LỜI
-        if has_answered:
-            if st.session_state[score_flag_key]:
-                st.success(f"🎉 Rất xuất sắc! Câu chuẩn: **{q['full_target']}** ({q['meaning']})")
-                play_audio_js(q["full_target"])
-            else:
-                st.error(f"❌ Chưa đúng rồi! Đáp án chuẩn: **{q['full_target']}** ({q['meaning']})")
-                play_audio_js(q["full_target"])
-            
-            if st.button("Câu tiếp theo ➡️", key=f"sent_next_{st.session_state.q_id}", use_container_width=True):
-                new_question(st.session_state.active_mode, st.session_state.active_lessons)
-                st.rerun()
-
-        # TH2: CHƯA TRẢ LỜI -> HIỂN THỊ TIMER (TỰ ĐỘNG ĐỌC CÂU ĐÚNG KHI HẾT GIỜ)
-        else:
-            if remaining <= 0:
-                play_audio_js(q["full_target"])
-            render_js_timer(remaining, st.session_state.q_id, correct_ans_display, tts_text=q["full_target"])
-            if st.button("Sang câu tiếp theo ➡️", key=f"timeout_sent_next_{st.session_state.q_id}", use_container_width=True):
-                new_question(st.session_state.active_mode, st.session_state.active_lessons)
-                st.rerun()
-
-    # --- DẠNG 1, 2, 3: TRẮC NGHIỆM ---
-    else:
-        if q["mode"] == 1:
-            st.markdown(f"<h1 style='text-align: center; font-size: 100px; color: #1E88E5;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
-            play_audio_js(q['target']['char'])
-        elif q["mode"] == 2:
-            st.markdown(f"<h1 style='text-align: center; font-size: 80px; color: #1E88E5;'>{q['target']['pinyin']}</h1>", unsafe_allow_html=True)
-            play_audio_js(q['target']['char'])
-        elif q["mode"] == 3:
-            st.markdown(f"<h1 style='text-align: center; font-size: 70px; color: #1E88E5;'>{q['target']['char']}</h1>", unsafe_allow_html=True)
-            st.markdown(f"<h3 style='text-align: center; color: #666;'>{q['target']['pinyin']}</h3>", unsafe_allow_html=True)
-            play_audio_js(q['target']['char'])
-
-        # TH1: Đã chọn đáp án -> Chỉ hiện 1 dòng kết quả + Nút Sang câu tiếp theo
-        if has_answered:
-            if st.session_state[score_flag_key]:
-                st.success(f"🎉 Chính xác! **{correct_ans_display}**")
-            else:
-                st.error(f"❌ Sai rồi! Đáp án đúng: **{correct_ans_display}**")
-
-            if st.button("Câu tiếp theo ➡️", key=f"ans_next_{st.session_state.q_id}", use_container_width=True):
-                new_question(st.session_state.active_mode, st.session_state.active_lessons)
-                st.rerun()
-
-        # TH2: Chưa chọn đáp án
-        else:
-            if remaining <= 0:
-                play_audio_js(tts_target_text)
-            render_js_timer(remaining, st.session_state.q_id, correct_ans_display, tts_text=tts_target_text)
-            user_choice = st.radio("Chọn đáp án:", q["options"], index=None, key=f"radio_{st.session_state.q_id}")
-            
-            if user_choice is not None:
-                st.session_state.total += 1
-                is_correct = (str(user_choice).strip() == str(q["correct_ans"]).strip())
-                st.session_state.score += (1 if is_correct else 0)
-                st.session_state[score_flag_key] = is_correct
-                st.rerun()
-
-            if st.button("Sang câu tiếp theo ➡️", key=f"timeout_next_{st.session_state.q_id}", use_container_width=True):
-                new_question(st.session_state.active_mode, st.session_state.active_lessons)
-                st.rerun()
-
-    # --- NÚT KẾT THÚC BÀI KIỂM TRA ĐẶT BIỆT LẬP Ở DƯỚI CÙNG TRANG ---
-    st.divider()
-    st.caption("Nếu muốn dừng bài kiểm tra tại đây, nhấn nút bên dưới:")
-    if st.button("🏁 Kết thúc bài kiểm tra", key=f"global_finish_{st.session_state.q_id}"):
-        st.session_state.quiz_finished = True
-        st.rerun()
-
-st.sidebar.markdown("---")
-st.sidebar.markdown(f"🏆 **Điểm số hiện tại:** {st.session_state.get('score', 0)} / {st.session_state.get('total', 0)}")
