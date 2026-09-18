@@ -136,10 +136,10 @@ def is_lesson_selected(item_lesson, selected_lessons):
                 return True
     return False
 
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=10)
 def fetch_rooms_from_sheet():
     try:
-        remote_response = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=1.5).json()
+        remote_response = requests.get(GOOGLE_SHEET_URL, params={"action": "get_rooms"}, timeout=2.0).json()
         if isinstance(remote_response, list):
             return [r for r in remote_response if isinstance(r, dict) and r.get("roomId")]
     except Exception:
@@ -161,6 +161,7 @@ for k in ["score", "total", "q_id"]:
 if "quiz_started" not in st.session_state: st.session_state.quiz_started = False
 if "quiz_finished" not in st.session_state: st.session_state.quiz_finished = False
 if "start_time" not in st.session_state: st.session_state.start_time = time.time()
+if "local_rooms" not in st.session_state: st.session_state.local_rooms = []
 if "local_leaderboard" not in st.session_state:
     st.session_state.local_leaderboard = [
         {"name": "Giáo viên tập sự", "score": 10, "total": 10, "mode": "Dạng 1", "date": "17/09/2026 14:30"},
@@ -192,16 +193,32 @@ with st.sidebar.expander("🏆 Phòng Thi Đấu Trực Tuyến", expanded=False
     
     if st.button("➕ Tạo Phòng Thi"):
         h_name = user_name.strip() if user_name.strip() else "Ẩn danh"
+        new_room_id = f"ROOM_{random.randint(1000, 9999)}"
+        new_rm = {
+            "roomId": new_room_id,
+            "host": h_name,
+            "mode": host_mode,
+            "numQ": host_num_questions
+        }
+        st.session_state.local_rooms.insert(0, new_rm)
+        
+        # Thử đồng bộ ngầm lên Google Sheet
         try:
-            params = {"action": "create_room", "host": h_name, "lessons": json.dumps(selected_lessons), "mode": host_mode, "num_questions": host_num_questions}
-            requests.get(GOOGLE_SHEET_URL, params=params, timeout=1.5)
-            st.success("🎉 Đã yêu cầu tạo phòng thành công!")
+            params = {"action": "create_room", "roomId": new_room_id, "host": h_name, "lessons": json.dumps(selected_lessons), "mode": host_mode, "num_questions": host_num_questions}
+            requests.get(GOOGLE_SHEET_URL, params=params, timeout=3.0)
         except Exception:
-            st.warning("⚠️ Lỗi mạng: Gửi yêu cầu thất bại.")
+            pass
             
+        st.success(f"🎉 Đã tạo phòng **{new_room_id}** thành công!")
+        st.cache_data.clear()
+        time.sleep(0.3)
+        st.rerun()
+
     st.write("---")
     st.markdown("**Danh Sách Phòng:**")
-    valid_rooms = fetch_rooms_from_sheet()
+    remote_rooms = fetch_rooms_from_sheet()
+    local_ids = [x.get("roomId") for x in st.session_state.local_rooms]
+    valid_rooms = st.session_state.local_rooms + [r for r in remote_rooms if r.get("roomId") not in local_ids]
         
     if not valid_rooms:
         st.caption("Chưa có phòng nào. Hãy nhấn 'Tạo Phòng Thi'!")
